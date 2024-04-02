@@ -23,10 +23,20 @@ class CustomUserManager(BaseUserManager):
 
         return self.create_user(email, password, **extra_fields)
 
+class Team(models.Model):
+    name = models.CharField(_("name"), max_length=50, unique=True)
+
+    class Meta:
+        db_table = "teams"
+
+    def __str__(self):
+        return self.name
+
 class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(_('email address'), unique=True)
     is_staff = models.BooleanField(_('staff status'), default=False)
     is_active = models.BooleanField(_('active'), default=True)
+    team = models.ForeignKey(Team, on_delete=models.DO_NOTHING)
 
     objects = CustomUserManager()
 
@@ -38,3 +48,4 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+    
