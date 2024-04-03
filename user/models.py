@@ -43,6 +43,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
 
+    @property
+    def nickname(self):
+        return self.email[:self.email.find('@')]
+
     class Meta:
         db_table = 'users'
 

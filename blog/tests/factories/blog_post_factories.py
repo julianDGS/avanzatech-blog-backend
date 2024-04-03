@@ -13,7 +13,7 @@ class UserFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = User
     
-    email = 'probe@mail.com'
+    email = factory.Faker('email')
     team = factory.SubFactory(TeamFactory)
 
     @factory.post_generation

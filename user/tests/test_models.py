@@ -22,6 +22,7 @@ class UserModelTest(TestCase):
         user.team = team
         user.set_password('1234')
         user.save()
+        nickname = 'probe'
 
         users_from_db = User.objects.all()
         self.assertEqual(len(users_from_db), 1)
@@ -29,6 +30,7 @@ class UserModelTest(TestCase):
         user_created = users_from_db[0]
         self.assertEqual(user.email, user_created.email)
         self.assertEqual(user.team.id, user_created.team.id)
+        self.assertEqual(nickname, user_created.nickname)
         self.assertTrue(check_password('1234', user_created.password))
 
 

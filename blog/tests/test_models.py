@@ -7,7 +7,7 @@ from ..models import BlogPost
 from .factories.blog_post_factories import *
 # Create your tests here.
 
-class UserModelTest(TestCase):
+class BlogModelTest(TestCase):
 
     def test_blog_post_exist(self):
         blog_post = BlogPost.objects.all()
