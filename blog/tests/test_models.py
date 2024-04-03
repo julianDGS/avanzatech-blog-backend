@@ -1,11 +1,9 @@
 from datetime import datetime
 from django.test import TestCase
-from django.contrib.auth.hashers import check_password
 from django.db import IntegrityError
 
-from ..models import BlogPost
+from ..models import BlogPost, Like
 from .factories.blog_post_factories import *
-# Create your tests here.
 
 class BlogModelTest(TestCase):
 
@@ -33,3 +31,70 @@ class BlogModelTest(TestCase):
         with self.assertRaises(IntegrityError):
             blog_post = BlogPost()
             blog_post.save()
+
+class LikeModelTest(TestCase):
+
+    def test_like_exist(self):
+        like = Like.objects.all()
+
+        self.assertEqual(like.count(), 0)
+
+    def test_create_new_like(self):        
+        user = UserFactory()
+        post = BlogPostFactory()
+        
+        like = Like.objects.create(user=user, post=post)
+        
+        likes_from_db = Like.objects.all()
+        self.assertEqual(len(likes_from_db), 1)
+        
+        like_created = likes_from_db[0]
+        self.assertEqual(like.post.id, like_created.post.id)
+        self.assertEqual(like.user.id, like_created.user.id)
+
+    def test_validate_unique_like_per_user_and_post(self):
+        user = UserFactory()
+        post = BlogPostFactory()
+
+        like = Like(user=user, post=post)
+        like.save()
+        with self.assertRaises(IntegrityError):
+            like2 = Like(user=user, post=post)
+            like2.save()
+
+    def test_delete_likes_when_user_deleted(self):
+        user = UserFactory()
+        user2 = UserFactory()
+        post = BlogPostFactory()
+        post2 = BlogPostFactory()
+
+        Like.objects.create(user=user, post=post)
+        Like.objects.create(user=user, post=post2)
+        Like.objects.create(user=user2, post=post2)
+        likes_from_db = Like.objects.filter(user_id=user.id)
+        self.assertEqual(len(likes_from_db), 2)
+
+        user.delete()
+        likes_from_db = Like.objects.filter(user_id=user.id)
+        likes_other_user = Like.objects.filter(user_id=user2.id)
+        self.assertEqual(len(likes_from_db), 0)
+        self.assertEqual(len(likes_other_user), 1)
+
+    def test_delete_likes_when_post_deleted(self):
+        user = UserFactory()
+        user2 = UserFactory()
+        post = BlogPostFactory()
+        post2 = BlogPostFactory()
+
+        Like.objects.create(user=user, post=post)
+        Like.objects.create(user=user, post=post2)
+        Like.objects.create(user=user2, post=post2)
+        likes_from_db = Like.objects.filter(user_id=post.id)
+        self.assertEqual(len(likes_from_db), 2)
+
+        post.delete()
+        likes_from_db = Like.objects.filter(user_id=post.id)
+        likes_other_post = Like.objects.filter(user_id=post2.id)
+        self.assertEqual(len(likes_from_db), 0)
+        self.assertEqual(len(likes_other_post), 1)
+    
