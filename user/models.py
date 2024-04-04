@@ -36,7 +36,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(_('email address'), unique=True)
     is_staff = models.BooleanField(_('staff status'), default=False)
     is_active = models.BooleanField(_('active'), default=True)
-    team = models.ForeignKey(Team, on_delete=models.DO_NOTHING)
+    team = models.ForeignKey(Team, on_delete=models.DO_NOTHING, null=True, blank=True)
 
     objects = CustomUserManager()
 

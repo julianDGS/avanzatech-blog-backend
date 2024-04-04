@@ -1,7 +1,6 @@
 import factory
 
 from blog.models import BlogPost, Comment
-from user.models import User, Team
 from user.tests.factories.user_factories import UserFactory
 
 class BlogPostFactory(factory.django.DjangoModelFactory):

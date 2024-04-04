@@ -1,9 +1,10 @@
 from datetime import datetime
 from django.test import TestCase
 from django.db import IntegrityError
+from django.core.exceptions import ValidationError
 
 from ..models import Permission, PermissionName, Category, CategoryName
-# from .factories.permission_factories import *
+from .factories.permission_factories import *
 
 class PermissionTest(TestCase):
 
@@ -52,7 +53,7 @@ class CategoryTest(TestCase):
 
         self.assertEqual(category.count(), 0)
 
-    def test_create_new_public_Category(self):        
+    def test_create_new_public_category(self):        
         category = Category(name=CategoryName.PUBLIC)
         created_date = datetime.now().date()
         category.save()
@@ -71,5 +72,21 @@ class CategoryTest(TestCase):
             category = Category()
             category.save()
 
+class PostPermissionTest(TestCase):
+
+    def test_post_permission_exist(self):
+        category = PostPermission.objects.all()
+
+        self.assertEqual(category.count(), 0)
+
+    def test_create_post_with_permission(self):
+        post = BlogPostFactory()
+        post_permission = PostWithPermissionFactory(post=post)
+
+        posts_from_db = PostPermission.objects.all()
+        self.assertEqual(len(posts_from_db), 1)
+        
+        post_created = posts_from_db[0].post
+        self.assertEqual(post.id , post_created.id)
 
     

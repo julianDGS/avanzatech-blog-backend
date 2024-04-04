@@ -35,3 +35,16 @@ class Category(BaseAbstractModel):
 
     def __str__(self):
         return self.name
+    
+
+class PostPermission(models.Model):
+    
+    
+
+
+    class Meta:
+        verbose_name = ("Post Permission")
+        verbose_name_plural = ("Post Permissions")
+
+    def __str__(self):
+        return self.name
