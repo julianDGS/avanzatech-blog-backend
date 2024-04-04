@@ -2,6 +2,7 @@ from django.db import models
 
 from user.models import User
 
+
 class BaseAbstractModel(models.Model):
     
     class Meta:
@@ -17,7 +18,8 @@ class BlogPost(BaseAbstractModel):
     content = models.TextField("content")
     user = models.ForeignKey(User, verbose_name="Users", on_delete=models.DO_NOTHING)
     likes = models.ManyToManyField(User, verbose_name=("Likes"), related_name='liked_posts', through='Like')
-    
+    comments = models.ManyToManyField(User, verbose_name=("Comments"), related_name='commented_posts', through='Comment')
+
     @property
     def excerpt(self):
         return self.content[:200]
@@ -42,3 +44,14 @@ class Like(models.Model):
 
     def __str__(self) -> str:
         return self.post.__str__()
+    
+class Comment(BaseAbstractModel):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    post = models.ForeignKey(BlogPost, on_delete=models.CASCADE)
+    comment = models.TextField(("comment"))
+
+    class Meta:
+        db_table = 'blog_post_comments'
+
+    def __str__(self) -> str:
+        return f'{self.post.__str__()}, comment: {self.comment}'
