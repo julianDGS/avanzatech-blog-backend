@@ -24,7 +24,7 @@ class CustomUserManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 class Team(models.Model):
-    name = models.CharField(_("name"), max_length=50, unique=True)
+    name = models.CharField(_("name"), max_length=50, unique=True, default=None)
 
     class Meta:
         db_table = "teams"

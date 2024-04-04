@@ -3,6 +3,7 @@ from django.contrib.auth.hashers import check_password
 from django.db import IntegrityError
 
 from ..models import User, Team
+from .factories.user_factories import * 
 # Create your tests here.
 
 class UserModelTest(TestCase):
@@ -13,15 +14,8 @@ class UserModelTest(TestCase):
         self.assertEqual(user.count(), 0)
 
     def test_create_new_user(self):
-        team = Team()
-        team.name = "team 1"
-        team.save()
 
-        user = User()
-        user.email = 'probe@mail.com'
-        user.team = team
-        user.set_password('1234')
-        user.save()
+        user = UserFactory(email='probe@mail.com')
         nickname = 'probe'
 
         users_from_db = User.objects.all()
@@ -35,18 +29,15 @@ class UserModelTest(TestCase):
 
 
     def test_validate_unique_fields(self):
-        team = Team()
-        team.name = "team 1"
-        team.save()
-
-        user = User()
-        user.email = 'probe@mail.com'
-        user.team = team
-        user.set_password('1234')
-        user.save()
-
+        UserFactory(email='probe@mail.com')
+        
         with self.assertRaises(IntegrityError):
             user2 = User()
             user2.email = 'probe@mail.com'
             user2.set_password('1234')
             user2.save()
+
+    def test_required_team_fields(self):
+        with self.assertRaises(IntegrityError):
+            team = Team()
+            team.save()
