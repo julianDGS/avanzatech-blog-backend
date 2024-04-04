@@ -2,7 +2,7 @@ from datetime import datetime
 from django.test import TestCase
 from django.db import IntegrityError
 
-from ..models import Permission, PermissionName
+from ..models import Permission, PermissionName, Category, CategoryName
 # from .factories.permission_factories import *
 
 class PermissionTest(TestCase):
@@ -21,7 +21,7 @@ class PermissionTest(TestCase):
         self.assertEqual(len(permissions_from_db), 1)
         
         permission_created = permissions_from_db[0]
-        self.assertEqual(PermissionName.READ, permission_created.name)
+        self.assertEqual('read', permission_created.name)
         self.assertTrue(permission.id)
         self.assertEqual(permission_created.created_at, permission_created.updated_at.date())
         self.assertEqual(permission_created.created_at, created_date)
@@ -35,7 +35,7 @@ class PermissionTest(TestCase):
         self.assertEqual(len(permissions_from_db), 1)
         
         permission_created = permissions_from_db[0]
-        self.assertEqual(PermissionName.EDIT, permission_created.name)
+        self.assertEqual('edit', permission_created.name)
         self.assertTrue(permission.id)
         self.assertEqual(permission_created.created_at, permission_created.updated_at.date())
         self.assertEqual(permission_created.created_at, created_date)
@@ -44,6 +44,32 @@ class PermissionTest(TestCase):
         with self.assertRaises(IntegrityError):
             permission = Permission()
             permission.save()
+
+class CategoryTest(TestCase):
+
+    def test_category_exist(self):
+        category = Category.objects.all()
+
+        self.assertEqual(category.count(), 0)
+
+    def test_create_new_public_Category(self):        
+        category = Category(name=CategoryName.PUBLIC)
+        created_date = datetime.now().date()
+        category.save()
+        
+        categories_from_db = Category.objects.all()
+        self.assertEqual(len(categories_from_db), 1)
+        
+        category_created = categories_from_db[0]
+        self.assertEqual(category.name, 'public')
+        self.assertTrue(category.id)
+        self.assertEqual(category_created.created_at, category_created.updated_at.date())
+        self.assertEqual(category_created.created_at, created_date)
+
+    def test_validate_required_fields(self):
+        with self.assertRaises(IntegrityError):
+            category = Category()
+            category.save()
 
 
     
