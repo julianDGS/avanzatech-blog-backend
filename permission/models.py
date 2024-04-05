@@ -1,6 +1,6 @@
 from django.db import models
 
-from blog.models import BaseAbstractModel
+from blog.models import BaseAbstractModel, BlogPost
 
 class PermissionName(models.TextChoices):
     READ = ('read', 'Read')
@@ -39,12 +39,15 @@ class Category(BaseAbstractModel):
 
 class PostPermission(models.Model):
     
-    
-
+    permission = models.ForeignKey(Permission, on_delete=models.CASCADE, null=True)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    post = models.ForeignKey(BlogPost, on_delete=models.CASCADE)
 
     class Meta:
-        verbose_name = ("Post Permission")
-        verbose_name_plural = ("Post Permissions")
+        db_table = 'post_category_permissions'
+        constraints = [
+            models.UniqueConstraint(fields=['post', 'category'], name='unique_post_category')
+        ]
 
     def __str__(self):
-        return self.name
+        return f'{self.post}, with: {self.category} and {self.permission}'

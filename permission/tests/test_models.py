@@ -1,7 +1,6 @@
 from datetime import datetime
 from django.test import TestCase
 from django.db import IntegrityError
-from django.core.exceptions import ValidationError
 
 from ..models import Permission, PermissionName, Category, CategoryName
 from .factories.permission_factories import *
@@ -81,12 +80,87 @@ class PostPermissionTest(TestCase):
 
     def test_create_post_with_permission(self):
         post = BlogPostFactory()
-        post_permission = PostWithPermissionFactory(post=post)
 
+        public = CategoryFactory(name=CategoryName.PUBLIC)
+        auth = CategoryFactory(name=CategoryName.AUTHENTICATE)
+        team = CategoryFactory(name=CategoryName.TEAM)
+        author = CategoryFactory(name=CategoryName.AUTHOR)
+        
+        read = PermissionFactory(name=PermissionName.READ)
+        edit = PermissionFactory(name=PermissionName.EDIT)
+        test_data = [
+            {"category": public, "permission": read},
+            {"category": auth, "permission": edit},
+            {"category": team, "permission": None},
+            {"category": author, "permission": edit},
+        ]
+        for data in test_data:
+            with self.subTest(data=data):
+                post_permission1 = PostWithPermissionFactory(post=post, category=data['category'], permission=data['permission'])
+                posts_from_db = PostPermission.objects.filter(
+                    post_id=post_permission1.post.id,
+                    category_id=post_permission1.category.id
+                )
+                self.assertEqual(len(posts_from_db), 1)
+                post_permission_db = posts_from_db.first()
+                self.assertEqual(post_permission_db.category.id, post_permission1.category.id)
+                self.assertEqual(post_permission_db.post.id, post_permission1.post.id)
+
+    def test_unique_fields(self):
+        post = BlogPostFactory()
+        public = CategoryFactory(name=CategoryName.PUBLIC)
+        read = PermissionFactory(name=PermissionName.READ)
+        PostWithPermissionFactory(post=post, category=public, permission=None)
+
+        with self.assertRaises(IntegrityError):
+            PostWithPermissionFactory(post=post, category=public, permission=read)
+    
+    def test_delete_post_permission_when_delete_post(self):
+        post = BlogPostFactory()
+        post2 = BlogPostFactory()
+        category1 = CategoryFactory(name="cat 1.1")
+        category2 = CategoryFactory(name="cat 1.2")
+        PostWithPermissionFactory(post=post, category=category1, permission=None)
+        PostWithPermissionFactory(post=post2, category=category2, permission=None)
+        
+        posts_from_db = PostPermission.objects.all()
+        self.assertEqual(len(posts_from_db), 2)
+        
+        post.delete()
         posts_from_db = PostPermission.objects.all()
         self.assertEqual(len(posts_from_db), 1)
+        self.assertEqual(posts_from_db[0].post.id, post2.id)
+
+    def test_delete_post_permission_when_delete_category(self):
+        category = CategoryFactory(name="cat 2.1")
+        category2 = CategoryFactory(name="cat 2.2")
+        PostWithPermissionFactory(category=category, permission=None)
+        PostWithPermissionFactory(category=category2, permission=None)
         
-        post_created = posts_from_db[0].post
-        self.assertEqual(post.id , post_created.id)
+        posts_from_db = PostPermission.objects.all()
+        self.assertEqual(len(posts_from_db), 2)
+        
+        category.delete()
+        posts_from_db = PostPermission.objects.all()
+        self.assertEqual(len(posts_from_db), 1)
+        self.assertEqual(posts_from_db[0].category.id, category2.id)
+    
+    def test_delete_post_permission_when_delete_permission(self):
+        permission = PermissionFactory(name="perm 3.1")
+        permission2 = PermissionFactory(name="perm 3.2")
+        category1 = CategoryFactory(name="cat 3.1")
+        category2 = CategoryFactory(name="cat 3.2")
+        PostWithPermissionFactory(permission=permission, category=category1)
+        PostWithPermissionFactory(permission=permission2, category=category2)
+        
+        posts_from_db = PostPermission.objects.all()
+        self.assertEqual(len(posts_from_db), 2)
+        
+        permission.delete()
+        posts_from_db = PostPermission.objects.all()
+        perm = posts_from_db.first().permission.id
+        self.assertEqual(len(posts_from_db), 1)
+        self.assertEqual(perm, permission2.id)      
+                
 
     
