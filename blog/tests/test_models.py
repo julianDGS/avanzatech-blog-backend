@@ -22,7 +22,7 @@ class BlogModelTest(TestCase):
         
         post_created = posts_from_db[0]
         self.assertEqual(blog_post.title, post_created.title)
-        self.assertEqual(blog_post.user.id, post_created.user.id)
+        self.assertEqual(blog_post.author.id, post_created.author.id)
         self.assertEqual(post_created.excerpt, excerpt)
         self.assertEqual(post_created.created_at, post_created.updated_at.date())
         self.assertEqual(post_created.created_at, created_date)

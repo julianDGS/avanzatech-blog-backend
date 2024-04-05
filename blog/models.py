@@ -16,7 +16,7 @@ class BlogPost(BaseAbstractModel):
     
     title = models.CharField("title", max_length=250, default=None)
     content = models.TextField("content", default=None)
-    user = models.ForeignKey(User, verbose_name="Users", on_delete=models.DO_NOTHING)
+    author = models.ForeignKey(User, verbose_name="Users", on_delete=models.DO_NOTHING)
     likes = models.ManyToManyField(User, verbose_name=("Likes"), related_name='liked_posts', through='Like')
     comments = models.ManyToManyField(User, verbose_name=("Comments"), related_name='commented_posts', through='Comment')
 
@@ -30,7 +30,7 @@ class BlogPost(BaseAbstractModel):
         verbose_name_plural = "Blog Posts"
 
     def __str__(self):
-        return f'title: {self.title}, user: {self.user.email}'
+        return f'title: {self.title}, user: {self.author.email}'
 
 class Like(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
