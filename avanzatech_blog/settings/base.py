@@ -13,8 +13,6 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 # if os.path.exists(env_file):
 #     environ.Env.read_env(env_file)
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env('SECRET_KEY')
@@ -53,6 +51,16 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'avanzatech_blog.urls'
+
+AUTH_USER_MODEL = 'user.CustomUser'
+
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+
+SESSION_COOKIE_AGE = 1209600  # 2 weeks, in seconds
+
+SESSION_COOKIE_SECURE = True  # Send the cookie only over HTTPS
+
+SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript access to session cookie
 
 TEMPLATES = [
     {
@@ -102,7 +110,6 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/

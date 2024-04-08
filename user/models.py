@@ -1,9 +1,11 @@
+from typing import Any
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 class CustomUserManager(BaseUserManager):
-    def create_user(self, email, password=None, **extra_fields):
+    
+    def create_user(self, email, password, **extra_fields):
         if not email:
             raise ValueError(_('The Email must be set'))
         email = self.normalize_email(email)
@@ -34,9 +36,12 @@ class Team(models.Model):
 
 class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(_('email address'), unique=True)
+    name = models.CharField(_("name"), max_length=50)
+    last_name = models.CharField(("name"), max_length=50)
     is_staff = models.BooleanField(_('staff status'), default=False)
     is_active = models.BooleanField(_('active'), default=True)
-    team = models.ForeignKey(Team, on_delete=models.DO_NOTHING, null=True, blank=True)
+    team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True)
+    is_admin = models.BooleanField(_("is_admin"), default=False)
 
     objects = CustomUserManager()
 

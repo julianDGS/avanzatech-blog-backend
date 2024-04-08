@@ -6,7 +6,7 @@ class TeamFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Team
     
-    name = factory.Faker('word')
+    name = factory.sequence(lambda n: 'Team %s' % n)
 
 class UserFactory(factory.django.DjangoModelFactory):
     class Meta:
@@ -14,6 +14,8 @@ class UserFactory(factory.django.DjangoModelFactory):
     
     email = factory.Faker('email')
     team = factory.SubFactory(TeamFactory)
+    name = factory.sequence(lambda n: "Name %s" % n)
+    last_name = factory.sequence(lambda n: "Last Name %s" % n)
 
     @factory.post_generation
     def set_user_password(obj, create, extracted, **kwargs):
