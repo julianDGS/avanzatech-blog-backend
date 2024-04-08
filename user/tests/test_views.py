@@ -1,3 +1,4 @@
+from django.db import IntegrityError
 from django.test import TestCase
 from django.urls import reverse
 from django.contrib.sessions.models import Session
@@ -48,7 +49,74 @@ class UserAuthenticateTest(TestCase):
         self.assertEqual(response.status_code, HTTP_200_OK)
         self.assertFalse(Session.objects.first())
 
+    def test_register_user(self):
+        register_url = reverse('register')
+        data = {
+                'email': "user@mail.com",
+                'password': "223344",
+                "confirm_password": "223344",
+                "name": "first name",
+                "last_name": "last name"
+        }
+        response: Response = self.client.post(register_url, data, format='json')
+        self.assertEqual(response.status_code, HTTP_201_CREATED)
+        self.assertEqual(response.data['email'], data['email'])
+        self.assertEqual(response.data['name'], data['name'])
+        self.assertEqual(response.data['last_name'], data['last_name'])
+        self.assertTrue(User.objects.first())
+
+    def test_register_duplicate_user(self):
+        User.objects.create(email="user@mail.com", password="223344")
+        register_url = reverse('register')
+        data = {
+                'email': "user@mail.com",
+                'password': "223344",
+                "confirm_password": "223344",
+                "name": "first name",
+                "last_name": "last name"
+        }
+        response: Response = self.client.post(register_url, data, format='json')
+        self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
+
     
+    def test_register_user_without_required_fields(self):
+        register_url = reverse('register')
+
+        test_data = [
+            {'email': "", 'password': "223344", "confirm_password": "223344", "name": "name 1", "last_name": "last name 1"},
+            {'email': "user2@mail.com", 'password': "", "name": "name 2", "last_name": "last name 2"}
+        ]
+        for data in test_data:
+            with self.subTest(data=data):
+                response = self.client.post(register_url, **data, format='json')
+                self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
+    
+    def test_register_user_ignore_extra_fields_from_serializer(self):
+        register_url = reverse('register')
+        data = {
+            'email': "user@mail.com", 
+            'password': "223344", 
+            "confirm_password": "223344", 
+            "name": "name 1", 
+            "last_name": "last name 1", 
+            "team": 1
+        }
+        response = self.client.post(register_url, data, format='json')
+        self.assertEqual(response.status_code, HTTP_201_CREATED)
+    
+    def test_register_user_with_incorrect_passwords(self):
+        register_url = reverse('register')
+        data = {
+            'email': "user@mail.com", 
+            'password': "223344", 
+            "confirm_password": "111111", 
+            "name": "name 1", 
+            "last_name": "last name 1", 
+        }
+        response = self.client.post(register_url, data, format='json')
+        self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
+
+
     def _login_user(self, user):
         login_url = reverse('login')
 

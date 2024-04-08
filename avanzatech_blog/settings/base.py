@@ -52,16 +52,6 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'avanzatech_blog.urls'
 
-AUTH_USER_MODEL = 'user.CustomUser'
-
-SESSION_ENGINE = 'django.contrib.sessions.backends.db'
-
-SESSION_COOKIE_AGE = 1209600  # 2 weeks, in seconds
-
-SESSION_COOKIE_SECURE = True  # Send the cookie only over HTTPS
-
-SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript access to session cookie
-
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -99,6 +89,25 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.SessionAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    )
+}
+
+AUTH_USER_MODEL = 'user.User'
+
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+
+SESSION_COOKIE_AGE = 1209600  # 2 weeks, in seconds
+
+SESSION_COOKIE_SECURE = True  # Send the cookie only over HTTPS
+
+SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript access to session cookie
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/

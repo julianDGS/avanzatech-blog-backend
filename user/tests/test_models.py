@@ -41,3 +41,14 @@ class UserModelTest(TestCase):
         with self.assertRaises(IntegrityError):
             team = Team()
             team.save()
+
+    def test_delete_team(self):
+        team = TeamFactory()
+        UserFactory(team=team)
+        
+        user_from_db = User.objects.first()
+        self.assertEqual(user_from_db.team.id, team.id)
+
+        team.delete()
+        user_from_db = User.objects.first()
+        self.assertEqual(user_from_db.team, None)
