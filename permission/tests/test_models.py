@@ -118,10 +118,8 @@ class PostPermissionTest(TestCase):
     def test_delete_post_permission_when_delete_post(self):
         post = BlogPostFactory()
         post2 = BlogPostFactory()
-        category1 = CategoryFactory(name="cat 1.1")
-        category2 = CategoryFactory(name="cat 1.2")
-        PostWithPermissionFactory(post=post, category=category1, permission=None)
-        PostWithPermissionFactory(post=post2, category=category2, permission=None)
+        PostWithPermissionFactory(post=post)
+        PostWithPermissionFactory(post=post2)
         
         posts_from_db = PostPermission.objects.all()
         self.assertEqual(len(posts_from_db), 2)
@@ -134,8 +132,8 @@ class PostPermissionTest(TestCase):
     def test_delete_post_permission_when_delete_category(self):
         category = CategoryFactory(name="cat 2.1")
         category2 = CategoryFactory(name="cat 2.2")
-        PostWithPermissionFactory(category=category, permission=None)
-        PostWithPermissionFactory(category=category2, permission=None)
+        PostWithPermissionFactory(category=category)
+        PostWithPermissionFactory(category=category2)
         
         posts_from_db = PostPermission.objects.all()
         self.assertEqual(len(posts_from_db), 2)
@@ -148,10 +146,8 @@ class PostPermissionTest(TestCase):
     def test_delete_post_permission_when_delete_permission(self):
         permission = PermissionFactory(name="perm 3.1")
         permission2 = PermissionFactory(name="perm 3.2")
-        category1 = CategoryFactory(name="cat 3.1")
-        category2 = CategoryFactory(name="cat 3.2")
-        PostWithPermissionFactory(permission=permission, category=category1)
-        PostWithPermissionFactory(permission=permission2, category=category2)
+        PostWithPermissionFactory(permission=permission)
+        PostWithPermissionFactory(permission=permission2)
         
         posts_from_db = PostPermission.objects.all()
         self.assertEqual(len(posts_from_db), 2)
