@@ -1,6 +1,4 @@
 from django.urls import reverse
-from django.forms.models import model_to_dict
-import json.scanner
 from rest_framework.response import Response
 from rest_framework.test import APITestCase
 from rest_framework.status import *
@@ -18,8 +16,7 @@ class BlogPostWithAuthenticationTest(APITestCase):
         self.user = User.objects.create_user(email="admin2@mail.com", password="223344")
         self.data = {
             'title': 'Leave sense plan.', 
-            'content': 'Effect somebody drug figure quality success. There government work commercial. Good various prevent suddenly. Concern create relationship. Want moment accept kitchen gun. Day popular generation bring stage. Tv hour order away structure admit hand. Go win various. Share price food relationship bit include. However get score movement down stage.', 
-            'author': self.user.id, 
+            'content': 'Effect somebody drug figure quality success. There government work commercial. Good various prevent suddenly. Concern create relationship. Want moment accept kitchen gun. Day popular generation bring stage.', 
             'permissions': {
                 'public': 'read', 
                 'auth': None, 
@@ -36,6 +33,13 @@ class BlogPostWithAuthenticationTest(APITestCase):
             format='json'
         )
 
+    def test_view_assigns_author_from_logged_user(self):
+        response = self.client.post(self.post_url, self.data, format='json')
+        self.assertEqual(response.status_code, HTTP_201_CREATED)
+        self.assertTrue(response.data['author'])
+        self.assertTrue(response.data['id'])
+        self.assertTrue(BlogPost.objects.first())
+
     def test_view_creates_post_with_all_permission(self):
         response =  self.client.post(
             self.post_url, 
@@ -51,13 +55,31 @@ class BlogPostWithAuthenticationTest(APITestCase):
         self.assertTrue(all(permission.category.name in categories for permission in permissions))
 
     def test_view_can_handle_post_with_missing_fields(self):
-        pass
+        test_data = [
+            {**self.data, 'title': None},
+            {**self.data, 'content': None},
+            {**self.data, 'permissions': {'auth': 'read', 'author': 'read', 'team': 'read'}},
+            {**self.data, 'permissions': {'public': 'read', 'author': 'read', 'team': 'read'}},
+            {**self.data, 'permissions': {'public': 'read', 'auth': 'read', 'team': 'read'}},
+            {**self.data, 'permissions': {'public': 'read', 'auth': 'read', 'author': 'read'}},
+        ]
 
-    def test_view_assigns_author_from_logged_user(self):
-        pass
+        for data in test_data:    
+            with self.subTest(data=data):
+                response: Response = self.client.post(self.post_url, data, format='json')
+                self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
 
-    def test_view_can_handle_post_with_missing_permissions(self):
-        pass
+    def test_view_can_handle_post_with_wrong_permission_category(self):
+        data = {**self.data, 'permissions': {'public': 'read', 'auth': 'read', 'author': 'read', 'team-wrong': 'read'}}
+        response: Response = self.client.post(self.post_url, data, format='json')
+        self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['permissions'][0], "'team-wrong' is not a valid category.")
+
+    def test_view_can_handle_post_with_wrong_permission_assigned_to_category(self):
+        data = {**self.data, 'permissions': {'public': 'read', 'auth': 'read', 'author': 'read', 'team': 'read-wrong'}}
+        response: Response = self.client.post(self.post_url, data, format='json')
+        self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['permissions'][0], "'read-wrong' is not a valid permission access.")
 
     def test_view_shows_correct_posts_with_user_as_author(self):
         pass

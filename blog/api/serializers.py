@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import serializers
 
 from ..models import BlogPost
@@ -16,20 +17,19 @@ class BlogPostCreateSerializer(serializers.ModelSerializer):
         fields = ('id', 'title', 'content', 'author', 'permissions')
 
 
-    def validate(self, data: dict):
-        super().validate(data)
-        permissions = data.get('permissions')
-        allowed_categories = [choice for choice, name in CategoryName.choices]
-        allowed_perms = [choice for choice, name in PermissionName.choices] + [None]
+    def validate_permissions(self, permissions: dict):
+        allowed_categories = [choice for choice, _ in CategoryName.choices]
+        allowed_perms = [choice for choice, _ in PermissionName.choices] + [None]
         if len(permissions) != len(allowed_categories):
             raise serializers.ValidationError(f"Missing permission for some category.")
         for category, perm in permissions.items():
             if category not in allowed_categories:
                 raise serializers.ValidationError(f"'{category}' is not a valid category.")
             if perm not in allowed_perms:
-                raise serializers.ValidationError(f"'{category}' is not a valid permission access.")
-        return data
+                raise serializers.ValidationError(f"'{perm}' is not a valid permission access.")
+        return permissions
 
+    @transaction.atomic
     def create(self, validated_data):
         permissions_data = validated_data.pop('permissions')
         post = BlogPost.objects.create(**validated_data)

@@ -10,7 +10,10 @@ class BlogPostViewSet(viewsets.GenericViewSet):
     parser_classes = (JSONParser,)
 
     def create(self, request):
-        post_serializer = BlogPostCreateSerializer(data=request.data)
+        data = request.data
+        user = request.user
+        data.update({'author': user.id})
+        post_serializer = BlogPostCreateSerializer(data=data)
         if post_serializer.is_valid():
             post_serializer.save()
             return Response(post_serializer.data, status=HTTP_201_CREATED)
