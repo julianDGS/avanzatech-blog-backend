@@ -3,10 +3,9 @@ from rest_framework.response import Response
 from rest_framework.test import APITestCase
 from rest_framework.status import *
 
-import json
-from ..models import User
-from .factories.blog_post_factories import * 
-from permission.tests.factories.permission_factories import *
+from permission.models import PostPermission
+from ..models import BlogPost
+from user.models import User
 
 class BlogPostWithAuthenticationTest(APITestCase):
     
