@@ -5,6 +5,7 @@ from blog.models import BaseAbstractModel, BlogPost
 class PermissionName(models.TextChoices):
     READ = ('read', 'Read')
     EDIT = ('edit', 'Edit')
+    NONE = ('none', 'None')
 
 class CategoryName(models.TextChoices):
     PUBLIC = ('public', 'Public')

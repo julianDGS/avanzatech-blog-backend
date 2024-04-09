@@ -19,10 +19,10 @@ class BlogPostWithAuthenticationTest(APITestCase):
             'title': 'Leave sense plan.', 
             'content': 'Effect somebody drug figure quality success. There government work commercial. Good various prevent suddenly. Concern create relationship. Want moment accept kitchen gun. Day popular generation bring stage.', 
             'permissions': {
-                'public': 'read', 
-                'auth': None, 
+                'public': 'none', 
+                'auth': 'read', 
                 'team': 'edit', 
-                'author': 'read'
+                'author': 'edit'
             }
         }
         self.client.post(
@@ -92,18 +92,14 @@ class BlogPostWithAuthenticationTest(APITestCase):
         self.assertTrue(all(permission.category.name in categories for permission in permissions))
         self.assertEqual(permissions[0].permission.name, 'read')
         self.assertEqual(permissions[1].permission.name, 'edit')
-        self.assertEqual(permissions[2].permission.name, 'read')
-        self.assertEqual(permissions[3].permission.name, 'edit')
+        self.assertEqual(permissions[2].permission.name, 'none')
+        self.assertEqual(permissions[3].permission.name, 'read')
 
         response: Response = self.client.put(f'{self.post_url}{post.id}/', self.data, format='json')
         permissions = PostPermission.objects.all()
-        # self.assertEqual(response.data['permissions']['public'], 'read')
-        # self.assertEqual(response.data['permissions']['auth'], None)
-        # self.assertEqual(response.data['permissions']['team'], 'edit')
-        # self.assertEqual(response.data['permissions']['author'], 'read')
         self.assertTrue(len(permissions), 4)
         self.assertEqual(response.data['id'], post.id)
-        self.assertDictEqual({permission.category.name: (permission.permission.name if permission.permission else None) for permission in permissions}, self.data['permissions'])
+        self.assertDictEqual({permission.category.name: permission.permission.name for permission in permissions}, self.data['permissions'])
         self.assertEqual(response.data['title'], self.data['title'])
         self.assertEqual(response.data['content'], self.data['content'])
 

@@ -19,7 +19,7 @@ class BlogPostCreateSerializer(serializers.ModelSerializer):
 
     def validate_permissions(self, permissions: dict):
         allowed_categories = [choice for choice, _ in CategoryName.choices]
-        allowed_perms = [choice for choice, _ in PermissionName.choices] + [None]
+        allowed_perms = [choice for choice, _ in PermissionName.choices]
         if len(permissions) != len(allowed_categories):
             raise serializers.ValidationError(f"Missing permission for some category.")
         for category, perm in permissions.items():
@@ -47,8 +47,6 @@ class BlogPostCreateSerializer(serializers.ModelSerializer):
     
     def _save_permissions(self, permissions_data, post):
         for category, permission in permissions_data.items():
-            permissionObj = None
             categoryObj, _ = Category.objects.get_or_create(name=category)
-            if permission is not None:
-                permissionObj, _ = Permission.objects.get_or_create(name=permission)               
+            permissionObj, _ = Permission.objects.get_or_create(name=permission)               
             PostPermission.objects.update_or_create(category=categoryObj, post=post, defaults={'permission':permissionObj})
