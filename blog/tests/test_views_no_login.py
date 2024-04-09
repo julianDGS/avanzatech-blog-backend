@@ -24,5 +24,8 @@ class BlogPostWithNoAuthTest(APITestCase):
         self.assertFalse(BlogPost.objects.all())
         self.assertFalse(PostPermission.objects.all())
 
+    def test_view_does_not_update_post_with_no_auth_user(self):
+        pass
+
     def test_view_shows_correct_posts_with_no_auth_user(self):
         pass

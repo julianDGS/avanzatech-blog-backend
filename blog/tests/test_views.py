@@ -6,6 +6,8 @@ from rest_framework.status import *
 from permission.models import PostPermission
 from ..models import BlogPost
 from user.models import User
+from .factories.blog_post_factories import BlogPostFactory
+from permission.tests.factories.permission_factories import PostWithPermissionFactory
 
 class BlogPostWithAuthenticationTest(APITestCase):
     
@@ -79,6 +81,43 @@ class BlogPostWithAuthenticationTest(APITestCase):
         response: Response = self.client.post(self.post_url, data, format='json')
         self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['permissions'][0], "'read-wrong' is not a valid permission access.")
+
+    def test_view_updates_post_data(self):
+        post = BlogPostFactory(author=self.user)
+        # Since CategoryFactory and PermissionFactory has Iterator and it gets value in order, create a batch of 4 elements will contain all permissions
+        PostWithPermissionFactory.create_batch(4, post=post)
+        permissions = PostPermission.objects.all()
+        self.assertTrue(len(permissions), 4)
+        categories = ['public', 'auth', 'team', 'author']
+        self.assertTrue(all(permission.category.name in categories for permission in permissions))
+        self.assertEqual(permissions[0].permission.name, 'read')
+        self.assertEqual(permissions[1].permission.name, 'edit')
+        self.assertEqual(permissions[2].permission.name, 'read')
+        self.assertEqual(permissions[3].permission.name, 'edit')
+
+        response: Response = self.client.put(f'{self.post_url}{post.id}/', self.data, format='json')
+        permissions = PostPermission.objects.all()
+        # self.assertEqual(response.data['permissions']['public'], 'read')
+        # self.assertEqual(response.data['permissions']['auth'], None)
+        # self.assertEqual(response.data['permissions']['team'], 'edit')
+        # self.assertEqual(response.data['permissions']['author'], 'read')
+        self.assertTrue(len(permissions), 4)
+        self.assertEqual(response.data['id'], post.id)
+        self.assertDictEqual({permission.category.name: (permission.permission.name if permission.permission else None) for permission in permissions}, self.data['permissions'])
+        self.assertEqual(response.data['title'], self.data['title'])
+        self.assertEqual(response.data['content'], self.data['content'])
+
+    def test_view_updates_post_permissions(self):
+        pass
+
+    def test_view_can_handle_wrong_data_on_update(self):
+        pass
+
+    def test_view_updates_only_necesary_fields(self):
+        pass
+
+    def test_view_does_not_update_post_with_no_edit_permissions(self):
+        pass
 
     def test_view_shows_correct_posts_with_user_as_author(self):
         pass

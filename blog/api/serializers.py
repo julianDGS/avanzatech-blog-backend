@@ -33,10 +33,22 @@ class BlogPostCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         permissions_data = validated_data.pop('permissions')
         post = BlogPost.objects.create(**validated_data)
+        self._save_permissions(permissions_data, post)
+        return post
+    
+    @transaction.atomic
+    def update(self, instance: BlogPost, validated_data):
+        permissions_data = validated_data.pop('permissions')
+        instance.title = validated_data.get('title')
+        instance.content = validated_data.get('content')
+        instance.save()
+        self._save_permissions(permissions_data, instance)
+        return instance
+    
+    def _save_permissions(self, permissions_data, post):
         for category, permission in permissions_data.items():
             permissionObj = None
             categoryObj, _ = Category.objects.get_or_create(name=category)
             if permission is not None:
                 permissionObj, _ = Permission.objects.get_or_create(name=permission)               
-            permission = PostPermission.objects.create(category=categoryObj, permission=permissionObj, post=post)
-        return post
+            PostPermission.objects.update_or_create(category=categoryObj, post=post, defaults={'permission':permissionObj})
