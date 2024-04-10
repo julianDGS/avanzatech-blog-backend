@@ -4,10 +4,12 @@ from rest_framework.status import *
 from rest_framework.parsers import JSONParser
 
 from .serializers import BlogPostCreateSerializer, BlogPostSerializer
+from permission.permissions import AuthenticateAndPostEdit
 
 class BlogPostViewSet(viewsets.GenericViewSet):
     serializer_class = BlogPostSerializer
     parser_classes = (JSONParser,)
+    permission_classes = [AuthenticateAndPostEdit]
 
     def get_queryset(self, pk=None):
         if pk is None:
@@ -25,8 +27,9 @@ class BlogPostViewSet(viewsets.GenericViewSet):
         return Response(post_serializer.errors, status=HTTP_400_BAD_REQUEST)
     
     def update(self, request, pk=None):
-        post = self.get_queryset(pk) 
+        post = self.get_queryset(pk)
         if post:
+            self.check_object_permissions(request, post)
             data = request.data
             user = request.user
             data.update({'author': user.id})

@@ -8,13 +8,13 @@ class PermissionFactory(factory.django.DjangoModelFactory):
         model = Permission
         django_get_or_create = ("name",)
 
-    name = factory.Iterator([choice for choice, name in PermissionName.choices])
+    name = factory.Iterator([choice for choice, _ in PermissionName.choices])
 
 class CategoryFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Category
         django_get_or_create = ("name",)
-    name = factory.Iterator([choice for choice, name in CategoryName.choices])
+    name = factory.Iterator([choice for choice, _ in CategoryName.choices])
 
 class PostWithPermissionFactory(factory.django.DjangoModelFactory):
     class Meta:
