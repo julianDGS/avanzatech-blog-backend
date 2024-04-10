@@ -3,9 +3,9 @@ from rest_framework.response import Response
 from rest_framework.test import APITestCase
 from rest_framework.status import *
 
-from permission.models import PostPermission
 from ..models import BlogPost
 from user.models import User
+from permission.models import PostPermission, Category, Permission, CategoryName, PermissionName
 from .factories.blog_post_factories import BlogPostFactory
 from permission.tests.factories.permission_factories import PostWithPermissionFactory
 
@@ -15,15 +15,24 @@ class BlogPostWithAuthenticationTest(APITestCase):
         login_url = reverse('login')
         self.post_url = '/post/'
         self.user = User.objects.create_user(email="admin2@mail.com", password="223344")
+        
+        self.public = Category.objects.create(name=CategoryName.PUBLIC)
+        self.auth = Category.objects.create(name=CategoryName.AUTHENTICATE)
+        self.team = Category.objects.create(name=CategoryName.TEAM)
+        self.author = Category.objects.create(name=CategoryName.AUTHOR)
+        self.read = Permission.objects.create(name=PermissionName.READ)
+        self.edit = Permission.objects.create(name=PermissionName.EDIT)
+        self.none = Permission.objects.create(name=PermissionName.NONE)
+        
         self.data = {
             'title': 'Leave sense plan.', 
             'content': 'Effect somebody drug figure quality success. There government work commercial. Good various prevent suddenly. Concern create relationship. Want moment accept kitchen gun. Day popular generation bring stage.', 
-            'permissions': {
-                'public': 'none', 
-                'auth': 'read', 
-                'team': 'edit', 
-                'author': 'edit'
-            }
+            'permissions': [
+                {"category_id": self.public.id, "permission_id": self.none.id},
+                {"category_id": self.auth.id, "permission_id": self.read.id},
+                {"category_id": self.team.id, "permission_id": self.edit.id},
+                {"category_id": self.author.id, "permission_id": self.edit.id}
+            ]
         }
         self.client.post(
             login_url,
@@ -52,17 +61,33 @@ class BlogPostWithAuthenticationTest(APITestCase):
         self.assertTrue(BlogPost.objects.first())
         
         permissions = PostPermission.objects.all()
-        categories = ['public', 'auth', 'team', 'author']
-        self.assertTrue(all(permission.category.name in categories for permission in permissions))
+        categories = [self.public, self.auth, self.team, self.author]
+        self.assertTrue(all(permission.category in categories for permission in permissions))
 
     def test_view_can_handle_post_with_missing_fields(self):
         test_data = [
             {**self.data, 'title': None},
             {**self.data, 'content': None},
-            {**self.data, 'permissions': {'auth': 'read', 'author': 'read', 'team': 'read'}},
-            {**self.data, 'permissions': {'public': 'read', 'author': 'read', 'team': 'read'}},
-            {**self.data, 'permissions': {'public': 'read', 'auth': 'read', 'team': 'read'}},
-            {**self.data, 'permissions': {'public': 'read', 'auth': 'read', 'author': 'read'}},
+            {**self.data, 'permissions': [
+                {'category_id': self.auth.id, 'permission_id': self.read.id}, 
+                {'category_id': self.author.id, 'permission_id': self.read.id}, 
+                {'category_id': self.team.id, 'permission_id': self.read.id}
+            ]},
+            {**self.data, 'permissions': [
+                {'category_id': self.public.id, 'permission_id': self.read.id}, 
+                {'category_id': self.author.id, 'permission_id': self.read.id}, 
+                {'category_id': self.team.id, 'permission_id': self.read.id}
+            ]},
+            {**self.data, 'permissions': [
+                {'category_id': self.public.id, 'permission_id': self.read.id}, 
+                {'category_id': self.auth.id, 'permission_id': self.read.id}, 
+                {'category_id': self.team.id, 'permission_id': self.read.id}
+            ]},
+            {**self.data, 'permissions': [
+                {'category_id': self.public.id, 'permission_id': self.read.id}, 
+                {'category_id': self.auth.id, 'permission_id': self.read.id}, 
+                {'category_id': self.author.id, 'permission_id': self.read.id}
+            ]},
         ]
 
         for data in test_data:    
@@ -71,16 +96,40 @@ class BlogPostWithAuthenticationTest(APITestCase):
                 self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
 
     def test_view_can_handle_post_with_wrong_permission_category(self):
-        data = {**self.data, 'permissions': {'public': 'read', 'auth': 'read', 'author': 'read', 'team-wrong': 'read'}}
+        data = {**self.data, 'permissions': [
+                        {'category_id': self.public.id, 'permission_id': self.read.id}, 
+                        {'category_id': self.auth.id, 'permission_id': self.read.id},
+                        {'category_id': self.team.id, 'permission_id': self.read.id},
+                        {'category_id': -1, 'permission_id': self.read.id}
+                    ]
+                }
         response: Response = self.client.post(self.post_url, data, format='json')
         self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data['permissions'][0], "'team-wrong' is not a valid category.")
+        self.assertEqual(response.data['permissions'][0], "There is an illegal category.")
 
     def test_view_can_handle_post_with_wrong_permission_assigned_to_category(self):
-        data = {**self.data, 'permissions': {'public': 'read', 'auth': 'read', 'author': 'read', 'team': 'read-wrong'}}
+        data = {**self.data, 'permissions': [
+                        {'category_id': self.public.id, 'permission_id': self.read.id}, 
+                        {'category_id': self.auth.id, 'permission_id': self.read.id},
+                        {'category_id': self.team.id, 'permission_id': self.read.id},
+                        {'category_id': self.author.id, 'permission_id': -1}
+                    ]
+                }
         response: Response = self.client.post(self.post_url, data, format='json')
         self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data['permissions'][0], "'read-wrong' is not a valid permission access.")
+        self.assertEqual(response.data['permissions'][0], "There is an illegal permission access.")
+    
+    def test_view_can_handle_post_with_duplicate_permission_categories(self):
+        data = {**self.data, 'permissions': [
+                        {'category_id': self.public.id, 'permission_id': self.read.id}, 
+                        {'category_id': self.public.id, 'permission_id': self.read.id},
+                        {'category_id': self.team.id, 'permission_id': self.read.id},
+                        {'category_id': self.team.id, 'permission_id': self.read.id}
+                    ]
+                }
+        response: Response = self.client.post(self.post_url, data, format='json')
+        self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['permissions'][0], "Missing permission for some category.")
 
     def test_view_updates_post_data(self):
         post = BlogPostFactory(author=self.user)
@@ -88,8 +137,6 @@ class BlogPostWithAuthenticationTest(APITestCase):
         PostWithPermissionFactory.create_batch(4, post=post)
         permissions = PostPermission.objects.all()
         self.assertTrue(len(permissions), 4)
-        categories = ['public', 'auth', 'team', 'author']
-        self.assertTrue(all(permission.category.name in categories for permission in permissions))
         self.assertEqual(permissions[0].permission.name, 'read')
         self.assertEqual(permissions[1].permission.name, 'edit')
         self.assertEqual(permissions[2].permission.name, 'none')
@@ -99,7 +146,10 @@ class BlogPostWithAuthenticationTest(APITestCase):
         permissions = PostPermission.objects.all()
         self.assertTrue(len(permissions), 4)
         self.assertEqual(response.data['id'], post.id)
-        self.assertDictEqual({permission.category.name: permission.permission.name for permission in permissions}, self.data['permissions'])
+        self.assertDictEqual(
+            {permission.category.id: permission.permission.id for permission in permissions}, 
+            {permission['category_id']: permission['permission_id'] for permission in self.data['permissions']}
+        )
         self.assertEqual(response.data['title'], self.data['title'])
         self.assertEqual(response.data['content'], self.data['content'])
 

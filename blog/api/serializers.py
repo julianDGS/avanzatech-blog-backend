@@ -2,31 +2,36 @@ from django.db import transaction
 from rest_framework import serializers
 
 from ..models import BlogPost
-from permission.models import PostPermission, CategoryName, PermissionName, Category, Permission
+from permission.models import PostPermission, Category, Permission
 
 class BlogPostSerializer(serializers.ModelSerializer):   
     class Meta:
         model = BlogPost
         fields = ('id', 'title', 'content', 'author')
+        
+class PostPermissionSerializer(serializers.Serializer):
+    category_id = serializers.IntegerField()
+    permission_id = serializers.IntegerField()
 
 class BlogPostCreateSerializer(serializers.ModelSerializer):
-    permissions = serializers.DictField(child=serializers.CharField(allow_null=True), write_only=True, required=True)
+    permissions = serializers.ListField(child=PostPermissionSerializer(), write_only=True, required=True)
 
     class Meta:
         model = BlogPost
         fields = ('id', 'title', 'content', 'author', 'permissions')
 
 
-    def validate_permissions(self, permissions: dict):
-        allowed_categories = [choice for choice, _ in CategoryName.choices]
-        allowed_perms = [choice for choice, _ in PermissionName.choices]
-        if len(permissions) != len(allowed_categories):
-            raise serializers.ValidationError(f"Missing permission for some category.")
-        for category, perm in permissions.items():
-            if category not in allowed_categories:
-                raise serializers.ValidationError(f"'{category}' is not a valid category.")
-            if perm not in allowed_perms:
-                raise serializers.ValidationError(f"'{perm}' is not a valid permission access.")
+    def validate_permissions(self, permissions: list):
+        allowed_category_ids = [category.id for category in Category.objects.all()]
+        allowed_perm_ids = [permission.id for permission in Permission.objects.all()]
+        set_categories = set([permission['category_id'] for permission in permissions])
+        if len(set_categories) != len(allowed_category_ids):
+            raise serializers.ValidationError("Missing permission for some category.")
+        for permission_dict in permissions:
+            if permission_dict['category_id'] not in allowed_category_ids:
+                raise serializers.ValidationError("There is an illegal category.")
+            if permission_dict['permission_id'] not in allowed_perm_ids:
+                raise serializers.ValidationError("There is an illegal permission access.")
         return permissions
 
     @transaction.atomic
@@ -46,7 +51,7 @@ class BlogPostCreateSerializer(serializers.ModelSerializer):
         return instance
     
     def _save_permissions(self, permissions_data, post):
-        for category, permission in permissions_data.items():
-            categoryObj, _ = Category.objects.get_or_create(name=category)
-            permissionObj, _ = Permission.objects.get_or_create(name=permission)               
+        for permission_dict in permissions_data:
+            categoryObj = Category.objects.get(pk=permission_dict['category_id'])
+            permissionObj = Permission.objects.get(pk=permission_dict['permission_id'])               
             PostPermission.objects.update_or_create(category=categoryObj, post=post, defaults={'permission':permissionObj})
