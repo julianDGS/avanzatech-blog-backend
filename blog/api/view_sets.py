@@ -3,8 +3,7 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.status import *
 from rest_framework.parsers import JSONParser
-
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import permission_classes
 
 from .serializers import BlogPostCreateSerializer, BlogPostSerializer
 from ..pagination import BlogPostPagination
@@ -22,6 +21,15 @@ class BlogPostViewSet(viewsets.GenericViewSet):
             return self.get_serializer().Meta.model.objects.all()
         return self.get_serializer().Meta.model.objects.filter(id=pk).first()
     
+    def _get_list_public_queryset(self):
+        global_filter = Q(
+                Q(category__name=CategoryName.PUBLIC) &
+                ~Q(permission__name=PermissionName.NONE)
+            )
+        all_data = PostPermission.objects.prefetch_related('post', 'category', 'permission').all()
+        queryset = all_data.filter(global_filter)
+        return queryset
+
     def _get_list_queryset(self, user):
         filter_author = Q(
             Q(post__author_id=user.id) & 
@@ -40,8 +48,10 @@ class BlogPostViewSet(viewsets.GenericViewSet):
             Q(category__name=CategoryName.AUTHENTICATE) &
             ~Q(permission__name=PermissionName.NONE)
         )
+        global_filter = filter_author | filter_team | filter_authenticate
         all_data = PostPermission.objects.prefetch_related('post', 'category', 'permission').all()
-        queryset = all_data.filter(filter_author | filter_team | filter_authenticate)
+        queryset = all_data.filter(global_filter)
+        import pdb; pdb.set_trace()
         return queryset
 
     def create(self, request):
@@ -71,10 +81,21 @@ class BlogPostViewSet(viewsets.GenericViewSet):
     def list(self, request):
         user = request.user
         posts = None
-        if user.is_admin:
+        if not user.is_authenticated:
+            queryset = self._get_list_public_queryset()
+            posts = [permission.post for permission in queryset]
+        elif user.is_admin:
             posts = self.get_queryset()
         else:
             queryset = self._get_list_queryset(user)
             posts = [permission.post for permission in queryset]
         post_serializer = self.get_serializer(posts, many=True)
         return Response(post_serializer.data, status=HTTP_200_OK)
+    
+    def retrieve(self, request, pk=None):
+        post = self.get_queryset(pk)
+        if post:
+            self.check_object_permissions(request, post)
+            post_serializer = self.get_serializer(post)
+            return Response(post_serializer.data, status=HTTP_200_OK)
+        return Response(post_serializer.data, status=HTTP_404_NOT_FOUND)

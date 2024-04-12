@@ -40,9 +40,9 @@ class Category(BaseAbstractModel):
 
 class PostPermission(models.Model):
     
-    permission = models.ForeignKey(Permission, on_delete=models.CASCADE, null=True)
+    permission = models.ForeignKey(Permission, on_delete=models.CASCADE)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
-    post = models.ForeignKey(BlogPost, on_delete=models.CASCADE)
+    post = models.ForeignKey(BlogPost, on_delete=models.CASCADE, related_name='reverse_post')
 
     class Meta:
         db_table = 'post_category_permissions'
