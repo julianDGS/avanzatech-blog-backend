@@ -14,7 +14,6 @@ class AuthenticateAndPostEdit(BasePermission):
             return True
         user: User = request.user
         author: User = User.objects.get(id=obj.author.id)
-        # import pdb; pdb.set_trace()
         if user.is_admin:
             return True
         post_permissions = PostPermission.objects.filter(post_id=obj.id)

@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.test import APITestCase
 from rest_framework.status import *
 
-from user.tests.factories.user_factories import UserFactory
+from user.tests.factories.user_factories import TeamFactory, UserFactory
 
 from ..models import BlogPost
 from user.models import User
@@ -17,7 +17,7 @@ class BlogPostWithAuthenticationTest(APITestCase):
         login_url = reverse('login')
         self.post_url = '/post/'
 
-        self.user = UserFactory(email="admin2@mail.com", set_user_password="223344")
+        self.user = UserFactory(email="user@mail.com", set_user_password="223344")
         
         self.public = Category.objects.create(name=CategoryName.PUBLIC)
         self.auth = Category.objects.create(name=CategoryName.AUTHENTICATE)
@@ -46,6 +46,10 @@ class BlogPostWithAuthenticationTest(APITestCase):
             },
             format='json'
         )
+
+        self.post_author = BlogPostFactory(author=self.user)
+        self.post_team = BlogPostFactory(author=UserFactory(team=self.user.team))
+        self.post_auth = BlogPostFactory(author=UserFactory(team=TeamFactory(name='other team')))
 
     def test_view_assigns_author_from_logged_user(self):
         response = self.client.post(self.post_url, self.data, format='json')
@@ -228,28 +232,24 @@ class BlogPostWithAuthenticationTest(APITestCase):
         self.assertEqual(response.data['id'], post.id)
         self.assertEqual(response.data['author'], self.user.id)
 
-    def test_view_does_not_update_post_with_no_edit_permissions(self):
-        post_author = BlogPostFactory(author=self.user)
-        post_team = BlogPostFactory(author=UserFactory(team=self.user.team))
-        post_auth = BlogPostFactory()
-        self.client.post(reverse('login'),{'username': post_auth.author.email, 'password': post_auth.author.password}, format='json')
-        self.client.post(reverse('login'),{'username': post_team.author.email, 'password': post_team.author.password}, format='json')
-        PostWithPermissionFactory.create_batch(4, post=post_author, permission=self.edit)
-        PostWithPermissionFactory.create_batch(4, post=post_team, permission=self.edit)
-        PostWithPermissionFactory.create_batch(4, post=post_auth, permission=self.edit)
+    def test_view_does_not_update_post_with_no_edit_permissions_by_user(self):
+        self.assertFalse(self.user.is_admin)
+        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.edit)
+        PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.edit)
+        PostWithPermissionFactory.create_batch(4, post=self.post_auth, permission=self.edit)
         permissions = PostPermission.objects.all()
         self.assertTrue(len(permissions), 4)
 
         test_data = [
-            {'categories': (self.author,), 'post': post_author},
-            {'categories': (self.team,), 'post': post_team},
-            {'categories': (self.auth,), 'post': post_auth},
-            {'categories': (self.author, self.team), 'post': post_author},
-            {'categories': (self.auth, self.team), 'post': post_team},
-            {'categories': (self.author, self.auth), 'post': post_auth},
-            {'categories': (self.author, self.team), 'post': post_team},
-            {'categories': (self.auth, self.team), 'post': post_auth},
-            {'categories': (self.author, self.auth), 'post': post_author},
+            {'categories': (self.author,), 'post': self.post_author},
+            {'categories': (self.team,), 'post': self.post_team},
+            {'categories': (self.auth,), 'post': self.post_auth},
+            {'categories': (self.author, self.team), 'post': self.post_author},
+            {'categories': (self.auth, self.team), 'post': self.post_team},
+            {'categories': (self.author, self.auth), 'post': self.post_auth},
+            {'categories': (self.author, self.team), 'post': self.post_team},
+            {'categories': (self.auth, self.team), 'post': self.post_auth},
+            {'categories': (self.author, self.auth), 'post': self.post_author},
         ]
 
         for data in test_data:
@@ -281,12 +281,92 @@ class BlogPostWithAuthenticationTest(APITestCase):
     
 
     def test_view_shows_correct_posts_with_user_as_author(self):
-        pass
+        self.assertFalse(self.user.is_admin)
+        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.read)
+        PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.read)
+        PostWithPermissionFactory.create_batch(4, post=self.post_auth, permission=self.read)
+        permissions = PostPermission.objects.all()
+        self.assertTrue(len(permissions), 4)
+
+        test_data = [
+            {'category': self.author, 'post': self.post_author, 'len': 2},
+            {'category': self.team, 'post': self.post_team, 'len': 1},
+            {'category': self.auth, 'post': self.post_auth, 'len': 0},
+        ]
+
+        for data in test_data:
+            with self.subTest(data=data):
+                post_data = data['post']
+                PostPermission.objects.filter(post=post_data, category=data['category']).update(permission=self.none)
+                response = self.client.get(self.post_url)
+                self.assertEqual(response.status_code, HTTP_200_OK)
+                self.assertEqual(len(response.data), data['len'])
 
     def test_view_shows_correct_posts_with_user_as_team_member(self):
-        pass
+        self.assertFalse(self.user.is_admin)
+        response_login = self.client.post(reverse('login'),{'username': self.post_team.author.email, 'password': '1234'}, format='json')
+        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.edit)
+        PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.read)
+        PostWithPermissionFactory.create_batch(4, post=self.post_auth, permission=self.read)
+        permissions = PostPermission.objects.all()
+        self.assertTrue(len(permissions), 4)
+
+        test_data = [
+            {'categories': (self.author,), 'post': self.post_author, 'len': 3},
+            {'categories': (self.team,), 'post': self.post_team, 'len': 3},
+            {'categories': (self.auth,), 'post': self.post_auth, 'len': 2},
+        ]
+
+        for data in test_data:
+            with self.subTest(data=data):
+                post_data = data['post']
+                PostPermission.objects.filter(post=post_data, category__in=data['categories']).update(permission=self.none)
+                response = self.client.get(self.post_url, headers={'X-CSRFToken': response_login.cookies['csrftoken'].value})
+                self.assertEqual(response.status_code, HTTP_200_OK)
+                self.assertEqual(len(response.data), data['len'])
 
     def test_view_shows_correct_posts_with_user_as_authenticated(self):
+        self.assertFalse(self.user.is_admin)
+        response_login = self.client.post(reverse('login'),{'username': self.post_auth.author.email, 'password': '1234'}, format='json')
+        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.read)
+        PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.read)
+        PostWithPermissionFactory.create_batch(4, post=self.post_auth, permission=self.edit)
+        permissions = PostPermission.objects.all()
+        self.assertTrue(len(permissions), 4)
+
+        test_data = [
+            {'categories': (self.author,), 'post': self.post_author, 'len': 3},
+            {'categories': (self.team,), 'post': self.post_team, 'len': 3},
+            {'categories': (self.auth,), 'post': self.post_auth, 'len': 3},
+        ]
+
+        for data in test_data:
+            with self.subTest(data=data):
+                post_data = data['post']
+                PostPermission.objects.filter(post=post_data, category__in=data['categories']).update(permission=self.none)
+                response = self.client.get(self.post_url, headers={'X-CSRFToken': response_login.cookies['csrftoken'].value})
+                self.assertEqual(response.status_code, HTTP_200_OK)
+                self.assertEqual(len(response.data), data['len'])
+
+    def test_view_shows_empty_list_if_no_post_retrieved(self):
+        self.assertFalse(self.user.is_admin)
+        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.none)
+        PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.none)
+        PostWithPermissionFactory.create_batch(4, post=self.post_auth, permission=self.none)
+        permissions = PostPermission.objects.all()
+        self.assertTrue(len(permissions), 4)
+        response = self.client.get(self.post_url)
+        self.assertEqual(response.status_code, HTTP_200_OK)
+        self.assertEqual(len(response.data), 0)
+        
+    def test_view_shows_404_if_no_valid_access_to_post(self):
+        pass
+
+    def test_view_pagination_includes_necessary_arguments(self):
+        # current page, total pages, total count, next page URL, previous page URL
+        pass
+
+    def test_view_shows_10_post_per_page(self):
         pass
 
 
