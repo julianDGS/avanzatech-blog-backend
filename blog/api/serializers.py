@@ -11,13 +11,13 @@ class BlogPostSerializer(serializers.ModelSerializer):
         model = BlogPost
         fields = ('id', 'title', 'content', 'author')
 
-    # def to_representation(self, instance: BlogPost):
-    #     return {
-    #         'title': instance.title,
-    #         'content': instance.content,
-    #         'author': {'id': instance.author.id, 'nickname': instance.author.nickname, 'email': instance.author.email},
-    #         'permissions': {cat_perm.category.name: cat_perm.permission.name for cat_perm in instance.reverse_post}
-    #     }
+    def to_representation(self, instance: BlogPost):
+        return {
+            'title': instance.title,
+            'content': instance.content,
+            'author': {'id': instance.author.id, 'nickname': instance.author.nickname, 'email': instance.author.email},
+            'permissions': {cat_perm.category.name: cat_perm.permission.name for cat_perm in instance.reverse_post.all()}
+        }
         
 class PostPermissionSerializer(serializers.Serializer):
     category_id = serializers.IntegerField()

@@ -5,10 +5,12 @@ from rest_framework.status import *
 from rest_framework.parsers import JSONParser
 from rest_framework.decorators import permission_classes
 
+from blog.models import BlogPost
+
 from .serializers import BlogPostCreateSerializer, BlogPostSerializer
 from ..pagination import BlogPostPagination
 from permission.permissions import AuthenticateAndPostEdit
-from permission.models import PostPermission, CategoryName, PermissionName
+from permission.models import CategoryName, PermissionName
 
 class BlogPostViewSet(viewsets.GenericViewSet):
     serializer_class = BlogPostSerializer
@@ -23,35 +25,34 @@ class BlogPostViewSet(viewsets.GenericViewSet):
     
     def _get_list_public_queryset(self):
         global_filter = Q(
-                Q(category__name=CategoryName.PUBLIC) &
-                ~Q(permission__name=PermissionName.NONE)
+                Q(reverse_post__category__name=CategoryName.PUBLIC) &
+                ~Q(reverse_post__permission__name=PermissionName.NONE)
             )
-        all_data = PostPermission.objects.prefetch_related('post', 'category', 'permission').all()
+        all_data = BlogPost.objects.prefetch_related('reverse_post__category', 'reverse_post__permission', 'author').all()
         queryset = all_data.filter(global_filter)
         return queryset
 
     def _get_list_queryset(self, user):
         filter_author = Q(
-            Q(post__author_id=user.id) & 
-            Q(category__name=CategoryName.AUTHOR) &
-            ~Q(permission__name=PermissionName.NONE)
+            Q(author_id=user.id) & 
+            Q(reverse_post__category__name=CategoryName.AUTHOR) &
+            ~Q(reverse_post__permission__name=PermissionName.NONE)
         )
         filter_team = Q(
-            ~Q(post__author_id=user.id) &
-            Q(post__author__team_id=user.team.id) &
-            Q(category__name=CategoryName.TEAM) &
-            ~Q(permission__name=PermissionName.NONE)
+            ~Q(author_id=user.id) &
+            Q(author__team_id=user.team.id) &
+            Q(reverse_post__category__name=CategoryName.TEAM) &
+            ~Q(reverse_post__permission__name=PermissionName.NONE)
         )
         filter_authenticate = Q(
-            ~Q(post__author_id=user.id) &
-            ~Q(post__author__team_id=user.team.id) &
-            Q(category__name=CategoryName.AUTHENTICATE) &
-            ~Q(permission__name=PermissionName.NONE)
+            ~Q(author_id=user.id) &
+            ~Q(author__team_id=user.team.id) &
+            Q(reverse_post__category__name=CategoryName.AUTHENTICATE) &
+            ~Q(reverse_post__permission__name=PermissionName.NONE)
         )
         global_filter = filter_author | filter_team | filter_authenticate
-        all_data = PostPermission.objects.prefetch_related('post', 'category', 'permission').all()
+        all_data = BlogPost.objects.prefetch_related('reverse_post__category', 'reverse_post__permission', 'author').all()
         queryset = all_data.filter(global_filter)
-        import pdb; pdb.set_trace()
         return queryset
 
     def create(self, request):
@@ -82,13 +83,11 @@ class BlogPostViewSet(viewsets.GenericViewSet):
         user = request.user
         posts = None
         if not user.is_authenticated:
-            queryset = self._get_list_public_queryset()
-            posts = [permission.post for permission in queryset]
+            posts = self._get_list_public_queryset()
         elif user.is_admin:
             posts = self.get_queryset()
         else:
-            queryset = self._get_list_queryset(user)
-            posts = [permission.post for permission in queryset]
+            posts = self._get_list_queryset(user)
         post_serializer = self.get_serializer(posts, many=True)
         return Response(post_serializer.data, status=HTTP_200_OK)
     
