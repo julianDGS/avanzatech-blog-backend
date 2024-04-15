@@ -56,7 +56,7 @@ class BlogPostWithNoAuthTest(APITestCase):
 
         response = self.client.get(self.post_url)
         self.assertEqual(response.status_code, HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
+        self.assertEqual(len(response.data['results']), 1)
 
     def test_view_shows_404_when_retrieve_and_no_auth_user(self):
         self.assertFalse(self.user.is_admin)

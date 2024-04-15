@@ -16,12 +16,12 @@ class BlogPostViewSet(viewsets.GenericViewSet):
     serializer_class = BlogPostSerializer
     parser_classes = (JSONParser,)
     permission_classes = [AuthenticateAndPostEdit]
-    # pagination_class = BlogPostPagination
+    pagination_class = BlogPostPagination
 
     def get_queryset(self, pk=None):
         if pk is None:
-            return self.get_serializer().Meta.model.objects.all()
-        return self.get_serializer().Meta.model.objects.filter(id=pk).first()
+            return self.get_serializer().Meta.model.objects.all().order_by('-created_at')
+        return self.get_serializer().Meta.model.objects.prefetch_related('reverse_post__category', 'reverse_post__permission', 'author').filter(id=pk).first()
     
     def _get_list_public_queryset(self):
         global_filter = Q(
@@ -29,7 +29,7 @@ class BlogPostViewSet(viewsets.GenericViewSet):
                 ~Q(reverse_post__permission__name=PermissionName.NONE)
             )
         all_data = BlogPost.objects.prefetch_related('reverse_post__category', 'reverse_post__permission', 'author').all()
-        queryset = all_data.filter(global_filter)
+        queryset = all_data.filter(global_filter).order_by('-created_at')
         return queryset
 
     def _get_list_queryset(self, user):
@@ -52,7 +52,7 @@ class BlogPostViewSet(viewsets.GenericViewSet):
         )
         global_filter = filter_author | filter_team | filter_authenticate
         all_data = BlogPost.objects.prefetch_related('reverse_post__category', 'reverse_post__permission', 'author').all()
-        queryset = all_data.filter(global_filter)
+        queryset = all_data.filter(global_filter).order_by('-created_at')
         return queryset
 
     def create(self, request):
@@ -88,6 +88,10 @@ class BlogPostViewSet(viewsets.GenericViewSet):
             posts = self.get_queryset()
         else:
             posts = self._get_list_queryset(user)
+        page = self.paginate_queryset(self.filter_queryset(posts))
+        if page is not None:
+            post_serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(post_serializer.data)
         post_serializer = self.get_serializer(posts, many=True)
         return Response(post_serializer.data, status=HTTP_200_OK)
     

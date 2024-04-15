@@ -300,7 +300,7 @@ class BlogPostWithAuthenticationTest(APITestCase):
                 PostPermission.objects.filter(post=post_data, category=data['category']).update(permission=self.none)
                 response = self.client.get(self.post_url)
                 self.assertEqual(response.status_code, HTTP_200_OK)
-                self.assertEqual(len(response.data), data['len'])
+                self.assertEqual(len(response.data['results']), data['len'])
 
     def test_view_shows_correct_posts_with_user_as_team_member(self):
         response_login = self.client.post(reverse('login'),{'username': self.post_team.author.email, 'password': '1234'}, format='json')
@@ -323,7 +323,7 @@ class BlogPostWithAuthenticationTest(APITestCase):
                 PostPermission.objects.filter(post=post_data, category__in=data['categories']).update(permission=self.none)
                 response = self.client.get(self.post_url, headers={'X-CSRFToken': response_login.cookies['csrftoken'].value})
                 self.assertEqual(response.status_code, HTTP_200_OK)
-                self.assertEqual(len(response.data), data['len'])
+                self.assertEqual(len(response.data['results']), data['len'])
 
     def test_view_shows_correct_posts_with_user_as_authenticated(self):
         response_login = self.client.post(reverse('login'),{'username': self.post_authenticate.author.email, 'password': '1234'}, format='json')
@@ -346,7 +346,7 @@ class BlogPostWithAuthenticationTest(APITestCase):
                 PostPermission.objects.filter(post=post_data, category__in=data['categories']).update(permission=self.none)
                 response = self.client.get(self.post_url, headers={'X-CSRFToken': response_login.cookies['csrftoken'].value})
                 self.assertEqual(response.status_code, HTTP_200_OK)
-                self.assertEqual(len(response.data), data['len'])
+                self.assertEqual(len(response.data['results']), data['len'])
 
     def test_view_shows_empty_list_if_no_post_retrieved(self):
         self.assertFalse(self.user.is_admin)
@@ -357,7 +357,7 @@ class BlogPostWithAuthenticationTest(APITestCase):
         self.assertTrue(len(permissions), 4)
         response = self.client.get(self.post_url)
         self.assertEqual(response.status_code, HTTP_200_OK)
-        self.assertEqual(len(response.data), 0)
+        self.assertEqual(len(response.data['results']), 0)
         
     def test_view_shows_404_if_no_valid_access_to_post(self):
         self.assertFalse(self.user.is_admin)
@@ -377,16 +377,20 @@ class BlogPostWithAuthenticationTest(APITestCase):
                 self.assertEqual(response.status_code, status)
 
     def test_view_pagination_includes_necessary_arguments(self):
-        # current page, total pages, total count, next page URL, previous page URL
+        # current page, total pages, total count, next page URL, previous page URL. 10 items per page
         admin = self.user
         admin.is_admin = True
         admin.save()
-        BlogPostFactory.create_batch(50)
+        BlogPostFactory.create_batch(47)
         response = self.client.get(self.post_url)
         self.assertEqual(response.status_code, HTTP_200_OK)
-        self.assertEqual(len(response.data), 0)
+        self.assertEqual(response.data['total_pages'], 5)
+        self.assertEqual(response.data['total_count'], 50)
+        self.assertEqual(response.data['current_page'], 1)
+        next_page_param = (response.data['next']).find('?')
+        self.assertEqual(response.data['next'][next_page_param:], '?page=2')
+        self.assertEqual(response.data['previous'], None)
+        self.assertEqual(len(response.data['results']), 10)
 
-    def test_view_shows_10_post_per_page(self):
-        pass
 
 
