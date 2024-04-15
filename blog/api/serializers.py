@@ -15,6 +15,7 @@ class BlogPostSerializer(serializers.ModelSerializer):
         return {
             'title': instance.title,
             'content': instance.content,
+            'excerpt': instance.excerpt,
             'author': {'id': instance.author.id, 'nickname': instance.author.nickname, 'email': instance.author.email},
             'permissions': {cat_perm.category.name: cat_perm.permission.name for cat_perm in instance.reverse_post.all()}
         }

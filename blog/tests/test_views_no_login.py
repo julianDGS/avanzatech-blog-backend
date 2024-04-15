@@ -64,3 +64,6 @@ class BlogPostWithNoAuthTest(APITestCase):
         PostWithPermissionFactory.create_batch(4, post=post_author, permission=self.read)
         response = self.client.get(f'{self.post_url}{post_author.id}/')
         self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
+
+    def test_view_can_handle_likes_from_anonymous_user(self):
+        pass

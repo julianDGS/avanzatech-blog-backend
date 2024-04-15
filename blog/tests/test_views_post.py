@@ -392,5 +392,52 @@ class BlogPostWithAuthenticationTest(APITestCase):
         self.assertEqual(response.data['previous'], None)
         self.assertEqual(len(response.data['results']), 10)
 
+    def test_view_creates_like(self):
+        self.assertFalse(self.user.is_admin)
+        self.assertEqual()
+        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.read)
+        response = self.client.post(f'{self.post_url}{self.post_author.id}/like/')
+        self.assertEqual(response.status_code, HTTP_201_CREATED)
+        self.assertEqual(response)
 
+    
+    def test_does_not_create_like_when_no_read_access(self):
+        # self.assertFalse(self.user.is_admin)
+        # PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.read)
+        # PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.none)
+        # test_data = [
+        #     {'post': self.post_author, 'status': HTTP_200_OK},
+        #     {'post': self.post_team, 'status': HTTP_403_FORBIDDEN},
+        # ]
+        # for data in test_data:
+        #     with self.subTest(data=data):
+        #         post = data['post']
+        #         status = data['status']
+        #         response = self.client.post(f'{self.post_url}{post.id}/like/')
+        #         self.assertEqual(response.status_code, status)
+        pass
+
+    def test_view_creates_unique_like_per_user(self):
+        pass
+
+    def test_view_deletes_likes_based_on_read_access(self):
+        pass
+
+    def test_does_not_delete_like_when_no_read_access(self):
+        self.assertFalse(self.user.is_admin)
+        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.read)
+        PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.none)
+        test_data = [
+            {'post': self.post_author, 'status': HTTP_200_OK},
+            {'post': self.post_team, 'status': HTTP_403_FORBIDDEN},
+        ]
+        for data in test_data:
+            with self.subTest(data=data):
+                post = data['post']
+                status = data['status']
+                response = self.client.post(f'{self.post_url}{post.id}/like/')
+                self.assertEqual(response.status_code, status)
+
+    def test_view_creates_like_from_admin_without_permissions(self):
+        pass
 
