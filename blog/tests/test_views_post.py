@@ -386,8 +386,6 @@ class BlogPostWithAuthenticationTest(APITestCase):
         self.assertEqual(response.status_code, HTTP_200_OK)
         self.assertEqual(len(response.data), 0)
 
-        pass
-
     def test_view_shows_10_post_per_page(self):
         pass
 

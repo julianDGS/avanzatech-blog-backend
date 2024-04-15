@@ -45,10 +45,11 @@ class UserModelTest(TestCase):
     def test_delete_team(self):
         team = TeamFactory()
         UserFactory(team=team)
+        default_team = Team.objects.get(pk=1)
         
         user_from_db = User.objects.first()
         self.assertEqual(user_from_db.team.id, team.id)
 
         team.delete()
         user_from_db = User.objects.first()
-        self.assertEqual(user_from_db.team, None)
+        self.assertEqual(user_from_db.team, default_team)

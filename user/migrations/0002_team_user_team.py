@@ -3,6 +3,9 @@
 import django.db.models.deletion
 from django.db import migrations, models
 
+def create_default_team(apps, schema_editor):
+    Team = apps.get_model("user", "Team")
+    Team.objects.create(name='default_team')
 
 class Migration(migrations.Migration):
 
@@ -27,4 +30,5 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.DO_NOTHING, to='user.team'),
             preserve_default=False,
         ),
+         migrations.RunPython(create_default_team),
     ]

@@ -40,7 +40,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     last_name = models.CharField(("name"), max_length=50)
     is_staff = models.BooleanField(_('staff status'), default=False)
     is_active = models.BooleanField(_('active'), default=True)
-    team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True)
+    team = models.ForeignKey(Team, on_delete=models.SET_DEFAULT, default=1)
     is_admin = models.BooleanField(_("is_admin"), default=False)
 
     objects = CustomUserManager()
