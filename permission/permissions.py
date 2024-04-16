@@ -37,7 +37,6 @@ class AuthenticateAndPostEdit(BasePermission):
             if post_permissions_dict[str(CategoryName.AUTHENTICATE)] != str(PermissionName.NONE):
                 return True
         else:
-            # import pdb; pdb.set_trace()
             if not user.is_authenticated:
                 if post_permissions_dict[str(CategoryName.PUBLIC)] == str(PermissionName.EDIT):
                     return True

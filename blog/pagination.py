@@ -13,3 +13,6 @@ class BlogPostPagination(PageNumberPagination):
             'total_pages': self.page.paginator.num_pages,
             'results': data
         })
+
+class LikePagination(BlogPostPagination):
+    page_size = 20

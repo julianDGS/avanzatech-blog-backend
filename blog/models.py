@@ -32,7 +32,7 @@ class BlogPost(BaseAbstractModel):
     def __str__(self):
         return f'title: {self.title}, user: {self.author.email}'
 
-class Like(models.Model):
+class Like(BaseAbstractModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     post = models.ForeignKey(BlogPost, on_delete=models.CASCADE)
 

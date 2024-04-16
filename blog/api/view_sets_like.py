@@ -6,20 +6,20 @@ from rest_framework.status import *
 from django_filters.rest_framework import DjangoFilterBackend
 
 from blog.api.serializers_like import LikeSerializer
-from blog.models import BlogPost
-
+from blog.models import BlogPost, Like
+from blog.pagination import LikePagination
+from mixins.get_mixin import ListQuerysetMixin
 from permission.permissions import AuthenticateAndLikePermission
 
-class LikeViewSet(viewsets.GenericViewSet):
+class LikeViewSet(viewsets.GenericViewSet, ListQuerysetMixin):
     serializer_class = LikeSerializer
     parser_classes = (JSONParser,)
     permission_classes = [AuthenticateAndLikePermission]
+    pagination_class = LikePagination
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['post', 'user']
 
-    def get_queryset(self, post_filter=None):
-        if post_filter:
-            return self.get_serializer().Meta.model.objects.prefetch_related('post', 'user').filter()
+    def get_queryset(self):
         return self.get_serializer().Meta.model.objects.prefetch_related('post', 'user').all()
 
     def create(self, request):
@@ -45,16 +45,12 @@ class LikeViewSet(viewsets.GenericViewSet):
                 return Response({'message', f'Like from {request.user.nickname} deleted.'}, status=HTTP_204_NO_CONTENT)
         return Response({'error': 'Post not found.'}, status=HTTP_404_NOT_FOUND)
     
-    # def list(self, request):
-    #     post_filter = self.request.query_params.get('post')
-    #     if post_filter:
-    #         queryset = self.get_queryset(post_filter)
-    #         queryset = self.filter_queryset(queryset)
-    #         import pdb; pdb.set_trace()
-    #         # page = self.paginate_queryset(queryset)
-    #         # if page is not None:
-    #         #     likes_serializer = self.get_serializer(page, many=True)
-    #         #     return self.get_paginated_response(likes_serializer.data)
-    #         likes_serializer = self.get_serializer(queryset, many=True)
-    #         return Response(likes_serializer.data, status=HTTP_200_OK)
-    #     return Response({'error': 'post param is required'}, HTTP_400_BAD_REQUEST)
+    def list(self, request):
+        queryset = self.get_like_list(request.user, Like, 'post__')
+        queryset = self.filter_queryset(queryset)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            likes_serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(likes_serializer.data)
+        likes_serializer = self.get_serializer(queryset, many=True)
+        return Response(likes_serializer.data, status=HTTP_200_OK)

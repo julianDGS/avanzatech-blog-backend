@@ -6,31 +6,31 @@ from permission.models import CategoryName, PermissionName
 
 class ListQuerysetMixin:
 
-    def __get_list_queryset(self, user):
+    def __get_list_queryset(self, user, reverse_attr=""):
         if isinstance(user, AnonymousUser):
             return Q(
-                Q(reverse_post__category__name=CategoryName.PUBLIC) &
-                ~Q(reverse_post__permission__name=PermissionName.NONE)
+                Q(**{f'{reverse_attr}reverse_post__category__name': CategoryName.PUBLIC}) &
+                ~Q(**{f'{reverse_attr}reverse_post__permission__name': PermissionName.NONE})
             )
         elif user.is_admin:
             return None
         else:
             filter_author = Q(
-                Q(author_id=user.id) & 
-                Q(reverse_post__category__name=CategoryName.AUTHOR) &
-                ~Q(reverse_post__permission__name=PermissionName.NONE)
+                Q(**{f'{reverse_attr}author_id' : user.id}) & 
+                Q(**{f'{reverse_attr}reverse_post__category__name' : CategoryName.AUTHOR}) &
+                ~Q(**{f'{reverse_attr}reverse_post__permission__name' : PermissionName.NONE})
             )
             filter_team = Q(
-                ~Q(author_id=user.id) &
-                Q(author__team_id=user.team.id) &
-                Q(reverse_post__category__name=CategoryName.TEAM) &
-                ~Q(reverse_post__permission__name=PermissionName.NONE)
+                ~Q(**{f'{reverse_attr}author_id' : user.id}) &
+                Q(**{f'{reverse_attr}author__team_id' : user.team.id}) &
+                Q(**{f'{reverse_attr}reverse_post__category__name' : CategoryName.TEAM}) &
+                ~Q(**{f'{reverse_attr}reverse_post__permission__name' : PermissionName.NONE})
             )
             filter_authenticate = Q(
-                ~Q(author_id=user.id) &
-                ~Q(author__team_id=user.team.id) &
-                Q(reverse_post__category__name=CategoryName.AUTHENTICATE) &
-                ~Q(reverse_post__permission__name=PermissionName.NONE)
+                ~Q(**{f'{reverse_attr}author_id' : user.id}) &
+                ~Q(**{f'{reverse_attr}author__team_id' : user.team.id}) &
+                Q(**{f'{reverse_attr}reverse_post__category__name' : CategoryName.AUTHENTICATE}) &
+                ~Q(**{f'{reverse_attr}reverse_post__permission__name' : PermissionName.NONE})
             )
             return filter_author | filter_team | filter_authenticate           
 
@@ -41,9 +41,9 @@ class ListQuerysetMixin:
             return all_data.order_by('-created_at')    
         return all_data.filter(global_filter).order_by('-created_at')
     
-    def get_like_list(self, user, model):
-        global_filter = self.__get_list_queryset(user)
-        all_data = model.objects.prefetch_related('post__reverse_post__category', 'post__reverse_post__permission', 'post__author').all()
+    def get_like_list(self, user, model, reverse_attr):
+        global_filter = self.__get_list_queryset(user, reverse_attr)
+        all_data = model.objects.prefetch_related(f'{reverse_attr}reverse_post__category', f'{reverse_attr}reverse_post__permission', f'{reverse_attr}author').all()
         if not global_filter:
             return all_data.order_by('-created_at')    
         return all_data.filter(global_filter).order_by('-created_at')
