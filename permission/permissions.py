@@ -9,7 +9,7 @@ class AuthenticateAndPostEdit(BasePermission):
         self.like_view_set = like_view_set
 
     def has_permission(self, request, view):
-        if view.action == 'list':
+        if view.action == 'list' or view.action == 'update':
             return True
         if request.user.is_authenticated:
             return True
@@ -36,7 +36,13 @@ class AuthenticateAndPostEdit(BasePermission):
                     return False
             if post_permissions_dict[str(CategoryName.AUTHENTICATE)] != str(PermissionName.NONE):
                 return True
-        else:      
+        else:
+            # import pdb; pdb.set_trace()
+            if not user.is_authenticated:
+                if post_permissions_dict[str(CategoryName.PUBLIC)] == str(PermissionName.EDIT):
+                    return True
+                else:
+                    return False 
             if user.is_admin:
                 return True
             if user.id == author.id:

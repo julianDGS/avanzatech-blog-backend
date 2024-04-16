@@ -23,6 +23,7 @@ class BlogPostWithNoAuthTest(APITestCase):
         self.data = {
             'title': 'Leave sense plan.', 
             'content': 'Effect somebody drug figure quality success. There government work commercial.',
+            'author': self.user.id,
             'permissions': [
                 {"category_id": public.id, "permission_id": self.none.id},
                 {"category_id": auth.id, "permission_id": self.read.id},
@@ -42,6 +43,12 @@ class BlogPostWithNoAuthTest(APITestCase):
         PostWithPermissionFactory.create_batch(4, post=post)
         response = self.client.put(f'{self.post_url}{post.id}/', self.data, format='json')
         self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
+
+    def test_view_updates_post_with_public_edit(self):
+        post = BlogPostFactory(author=self.user)
+        PostWithPermissionFactory.create_batch(4, post=post, permission=self.edit)
+        response = self.client.put(f'{self.post_url}{post.id}/', self.data, format='json')
+        self.assertEqual(response.status_code, HTTP_200_OK)
 
     def test_view_shows_correct_posts_with_no_auth_user(self):
         self.assertFalse(self.user.is_admin)
