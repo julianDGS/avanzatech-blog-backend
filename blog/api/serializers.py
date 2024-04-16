@@ -2,9 +2,8 @@ from django.db import transaction
 from django.core.exceptions import ObjectDoesNotExist 
 from rest_framework import serializers
 
-from ..models import BlogPost
+from ..models import BlogPost, Like
 from permission.models import PostPermission, Category, Permission, CategoryName
-from user.serializers import ListUserSerializer
 
 class BlogPostSerializer(serializers.ModelSerializer):
     class Meta:
@@ -17,7 +16,8 @@ class BlogPostSerializer(serializers.ModelSerializer):
             'content': instance.content,
             'excerpt': instance.excerpt,
             'author': {'id': instance.author.id, 'nickname': instance.author.nickname, 'email': instance.author.email},
-            'permissions': {cat_perm.category.name: cat_perm.permission.name for cat_perm in instance.reverse_post.all()}
+            'permissions': {cat_perm.category.name: cat_perm.permission.name for cat_perm in instance.reverse_post.all()},
+            'likes': instance.likes.count()
         }
         
 class PostPermissionSerializer(serializers.Serializer):
@@ -71,53 +71,3 @@ class BlogPostCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'permissions': [err]})
             PostPermission.objects.update_or_create(category=categoryObj, post=post, defaults={'permission':permissionObj})
 
-
-# class PostPermissionNameSerializer(serializers.Serializer):
-#     category = serializers.CharField()
-#     permission = serializers.CharField()
-
-# class GroupedPostSerializer(serializers.Serializer):
-#     title = serializers.CharField()
-#     content = serializers.CharField()
-#     author = ListUserSerializer()
-#     permissions = PostPermissionNameSerializer()
-
-# def serializer_customized_to_return_post(queryset):
-#     grouped_data = []
-#     post_perm: PostPermission = None
-#     for index in range(len(queryset)):
-#         post_perm = queryset[index]
-#         id = post_perm.post.id
-#         title = post_perm.post.title
-#         content = post_perm.post.content
-#         author = post_perm.post.author
-#         category = post_perm.category.name
-#         permission = post_perm.permission.name
-#         if index != 0:
-#             previous: PostPermission = queryset[index-1]
-#             if id == previous.id:
-#                 post_perm['permissions'].update(
-#                     {category: permission}
-#                 )
-#             else:
-#                 grouped_data.append({
-#                     'id': id,
-#                     'title': title,
-#                     'content': content,
-#                     'author': author,
-#                     'permissions': {
-#                         category: permission
-#                     }
-#                 })
-#         else:
-#             grouped_data.append({
-#                     'id': id,
-#                     'title': title,
-#                     'content': content,
-#                     'author': author,
-#                     'permissions': {
-#                         category: permission
-#                     }
-#                 })
-    
-#     return grouped_data

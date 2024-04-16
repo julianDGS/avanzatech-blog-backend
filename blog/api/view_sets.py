@@ -3,7 +3,6 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.status import *
 from rest_framework.parsers import JSONParser
-from rest_framework.decorators import permission_classes
 
 from blog.models import BlogPost
 

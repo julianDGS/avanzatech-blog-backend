@@ -5,6 +5,9 @@ from .models import CategoryName, PermissionName, PostPermission
 
 class AuthenticateAndPostEdit(BasePermission):
     
+    def __init__(self, like_view_set=False):
+        self.like_view_set = like_view_set
+
     def has_permission(self, request, view):
         if view.action == 'list':
             return True
@@ -18,7 +21,7 @@ class AuthenticateAndPostEdit(BasePermission):
         author: User = User.objects.get(id=obj.author.id)
         post_permissions = PostPermission.objects.filter(post_id=obj.id)
         post_permissions_dict = {permission.category.name: permission.permission.name for permission in post_permissions}
-        if request.method == 'GET':
+        if request.method == 'GET' or self.like_view_set:
             if user.is_admin:
                 return True
             if user.id == author.id:
@@ -49,3 +52,8 @@ class AuthenticateAndPostEdit(BasePermission):
             if post_permissions_dict[str(CategoryName.AUTHENTICATE)] == str(PermissionName.EDIT):
                 return True
         return False
+
+
+class AuthenticateAndLikePermission(AuthenticateAndPostEdit):
+    def __init__(self):
+        super().__init__(like_view_set=True)
