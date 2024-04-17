@@ -8,7 +8,9 @@ from user.tests.factories.user_factories import TeamFactory, UserFactory
 from ..models import BlogPost, Like, Comment
 from user.models import User
 
+
 class BlogPostWithNoAuthTest(APITestCase):
+
 
     def setUp(self):
         self.post_url = '/post/'
@@ -32,11 +34,13 @@ class BlogPostWithNoAuthTest(APITestCase):
             ]
         }
 
+
     def test_view_does_not_create_post_with_no_auth_user(self): 
         response = self.client.post(self.post_url, self.data, format='json')
         self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
         self.assertFalse(BlogPost.objects.all())
         self.assertFalse(PostPermission.objects.all())
+
 
     def test_view_does_not_update_post_with_no_auth_user(self):
         post = BlogPostFactory(author=self.user)
@@ -44,11 +48,20 @@ class BlogPostWithNoAuthTest(APITestCase):
         response = self.client.put(f'{self.post_url}{post.id}/', self.data, format='json')
         self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
 
+
+    def test_view_does_not_delete_post_with_no_auth_user(self):
+        post = BlogPostFactory(author=self.user)
+        PostWithPermissionFactory.create_batch(4, post=post, permission=self.read)
+        response = self.client.delete(f'{self.post_url}{post.id}/')
+        self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
+
+
     def test_view_updates_post_with_public_edit(self):
         post = BlogPostFactory(author=self.user)
         PostWithPermissionFactory.create_batch(4, post=post, permission=self.edit)
         response = self.client.put(f'{self.post_url}{post.id}/', self.data, format='json')
         self.assertEqual(response.status_code, HTTP_200_OK)
+
 
     def test_view_shows_correct_posts_with_no_auth_user(self):
         self.assertFalse(self.user.is_admin)
@@ -65,12 +78,14 @@ class BlogPostWithNoAuthTest(APITestCase):
         self.assertEqual(response.status_code, HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 1)
 
+
     def test_view_shows_404_when_retrieve_and_no_auth_user(self):
         self.assertFalse(self.user.is_admin)
         post_author = BlogPostFactory(author=self.user)
         PostWithPermissionFactory.create_batch(4, post=post_author, permission=self.read)
         response = self.client.get(f'{self.post_url}{post_author.id}/')
         self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
+
 
     def test_view_can_handle_likes_from_anonymous_user(self):
         self.assertFalse(self.user.is_admin)
@@ -81,6 +96,7 @@ class BlogPostWithNoAuthTest(APITestCase):
         self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
         self.assertEqual(len(Like.objects.filter(post_id=post_author.id)), 0)
     
+
     def test_view_can_handle_comments_from_anonymous_user(self):
         self.assertFalse(self.user.is_admin)
         post_author = BlogPostFactory(author=self.user)

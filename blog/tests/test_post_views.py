@@ -203,7 +203,6 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
 
 
     def test_view_does_not_update_post_with_no_edit_permissions_by_user(self):
-        self.assertFalse(self.user.is_admin)
         PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.edit)
         PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.edit)
         PostWithPermissionFactory.create_batch(4, post=self.post_authenticate, permission=self.edit)
@@ -250,9 +249,31 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
         self.assertEqual(response.data['title'], self.data['title'])
         self.assertEqual(response.data['content'], self.data['content'])
     
+    def test_view_deletes_post(self):
+        self.assertEqual(len(BlogPost.objects.filter(pk=self.post_author.id)), 1)
+        response = self.client.delete(f'{self.post_url}{self.post_author.id}/')
+        self.assertEqual(response.status_code, HTTP_204_NO_CONTENT)
+        self.assertEqual(len(BlogPost.objects.filter(pk=self.post_author.id)), 0)
+
+
+    def test_view_deletes_post_only_by_author(self):
+        self.assertEqual(len(BlogPost.objects.filter(pk=self.post_team.id)), 1)
+        response = self.client.delete(f'{self.post_url}{self.post_team.id}/')
+        self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
+        self.assertEqual(len(BlogPost.objects.filter(pk=self.post_team.id)), 1)
+
+
+    def test_view_admin_can_delete_post_without_permissions(self):
+        admin = self.user
+        admin.is_admin = True
+        admin.save()
+        self.assertEqual(len(BlogPost.objects.filter(pk=self.post_team.id)), 1)
+        response = self.client.delete(f'{self.post_url}{self.post_team.id}/')
+        self.assertEqual(response.status_code, HTTP_204_NO_CONTENT)
+        self.assertEqual(len(BlogPost.objects.filter(pk=self.post_team.id)), 0)
+
 
     def test_view_shows_correct_posts_with_user_as_author(self):
-        self.assertFalse(self.user.is_admin)
         PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.read)
         PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.read)
         PostWithPermissionFactory.create_batch(4, post=self.post_authenticate, permission=self.read)
@@ -323,7 +344,6 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
 
 
     def test_view_shows_empty_list_if_no_post_retrieved(self):
-        self.assertFalse(self.user.is_admin)
         PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.none)
         PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.none)
         PostWithPermissionFactory.create_batch(4, post=self.post_authenticate, permission=self.none)
@@ -335,7 +355,6 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
 
 
     def test_view_shows_404_if_no_valid_access_to_post(self):
-        self.assertFalse(self.user.is_admin)
         PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.read)
         PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.none)
         PostWithPermissionFactory.create_batch(4, post=self.post_authenticate, permission=self.edit)

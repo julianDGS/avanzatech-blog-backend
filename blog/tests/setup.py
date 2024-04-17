@@ -47,3 +47,4 @@ class AuthenticateSetUp(APITestCase):
             self.post_author = BlogPostFactory(author=self.user)
             self.post_team = BlogPostFactory(author=UserFactory(team=self.user.team))
             self.post_authenticate = BlogPostFactory(author=UserFactory(team=TeamFactory(name='other team')))
+            self.assertFalse(self.user.is_admin)

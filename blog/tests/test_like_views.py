@@ -13,7 +13,6 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
 
 
     def test_view_creates_like(self):
-        self.assertFalse(self.user.is_admin)
         self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 0)
         PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.read)
         response = self.client.post(self.like_url, {'post_id': self.post_author.id}, format='json')
@@ -23,7 +22,6 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
 
     
     def test_does_not_create_like_when_no_read_access(self):
-        self.assertFalse(self.user.is_admin)
         self.assertEqual(len(Like.objects.filter(post_id=self.post_team.id)), 0)
         PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.none)
         response = self.client.post(self.like_url, {'post_id': self.post_team.id}, format='json')
@@ -32,7 +30,6 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
                
 
     def test_view_creates_unique_like_per_user(self):
-        self.assertFalse(self.user.is_admin)
         LikeFactory.create(post=self.post_author, user=self.user)
         self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 1)
         PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.read)
@@ -43,7 +40,6 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
 
 
     def test_view_deletes_like(self):
-        self.assertFalse(self.user.is_admin)
         LikeFactory.create(post=self.post_author, user=self.user)
         self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 1)
         PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.read)
@@ -53,7 +49,6 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
 
 
     def test_does_not_delete_like_when_no_read_access(self):
-        self.assertFalse(self.user.is_admin)
         LikeFactory.create(post=self.post_author, user=self.user)
         self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 1)
         PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.none)
@@ -76,7 +71,6 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
 
     
     def test_view_shows_correct_likes_with_user_as_author(self):
-        self.assertFalse(self.user.is_admin)
         PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.read)
         PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.read)
         PostWithPermissionFactory.create_batch(4, post=self.post_authenticate, permission=self.read)
