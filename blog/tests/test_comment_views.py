@@ -56,6 +56,26 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
             self.assertEqual(len(Comment.objects.filter(post_id=self.post_author.id)), 1)
 
 
+    def test_view_deletes_comment(self):
+        self.assertFalse(self.user.is_admin)
+        CommentFactory.create(post=self.post_author, user=self.user)
+        self.assertEqual(len(Comment.objects.filter(post_id=self.post_author.id)), 1)
+        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.read)
+        response = self.client.delete(f'{self.comment_url}{self.post_author.id}/')
+        self.assertEqual(response.status_code, HTTP_204_NO_CONTENT)
+        self.assertEqual(len(Comment.objects.filter(post_id=self.post_author.id)), 0)
+
+
+    def test_does_not_delete_comment_when_no_read_access(self):
+        self.assertFalse(self.user.is_admin)
+        CommentFactory.create(post=self.post_author, user=self.user)
+        self.assertEqual(len(Comment.objects.filter(post_id=self.post_author.id)), 1)
+        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.none)
+        response = self.client.delete(f'{self.comment_url}{self.post_author.id}/')
+        self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
+        self.assertEqual(len(Comment.objects.filter(post_id=self.post_author.id)), 1)
+
+
   
         
 

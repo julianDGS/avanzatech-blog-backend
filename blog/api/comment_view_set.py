@@ -15,9 +15,11 @@ class CommentViewSet(viewsets.GenericViewSet, ListQuerysetMixin):
     serializer_class = CommentSerializer
     parser_classes = (JSONParser,)
     permission_classes = [AuthenticateAndCommentPermission]
-    
+
+
     def get_queryset(self):
         return self.get_serializer().Meta.model.objects.prefetch_related('post', 'user').all()
+
 
     def create(self, request):
         post = BlogPost.objects.filter(pk=request.data['post_id']).first()
@@ -32,4 +34,14 @@ class CommentViewSet(viewsets.GenericViewSet, ListQuerysetMixin):
             return Response(like_serializer.errors, status=HTTP_400_BAD_REQUEST)
         return Response({'error': 'Post not found.'}, status=HTTP_404_NOT_FOUND)
     
+
+    def destroy(self, request, pk=None):
+        post = BlogPost.objects.filter(pk=pk).first()
+        if post:
+            comment = self.get_serializer().Meta.model.objects.filter(post_id=post.id, user_id=request.user.id)
+            if comment:
+                self.check_object_permissions(request, post)
+                comment.delete()
+                return Response({'message', f'Comment from {request.user.nickname} deleted.'}, status=HTTP_204_NO_CONTENT)
+        return Response({'error': 'Post not found.'}, status=HTTP_404_NOT_FOUND)
 

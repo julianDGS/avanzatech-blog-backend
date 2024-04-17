@@ -19,8 +19,10 @@ class LikeViewSet(viewsets.GenericViewSet, ListQuerysetMixin):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['post', 'user']
 
+
     def get_queryset(self):
         return self.get_serializer().Meta.model.objects.prefetch_related('post', 'user').all()
+
 
     def create(self, request):
         post = BlogPost.objects.filter(pk=request.data['post_id']).first()
@@ -35,6 +37,7 @@ class LikeViewSet(viewsets.GenericViewSet, ListQuerysetMixin):
             return Response(like_serializer.errors, status=HTTP_400_BAD_REQUEST)
         return Response({'error': 'Post not found.'}, status=HTTP_404_NOT_FOUND)
     
+
     def destroy(self, request, pk=None):
         post = BlogPost.objects.filter(pk=pk).first()
         if post:
@@ -44,6 +47,7 @@ class LikeViewSet(viewsets.GenericViewSet, ListQuerysetMixin):
                 like.delete()
                 return Response({'message', f'Like from {request.user.nickname} deleted.'}, status=HTTP_204_NO_CONTENT)
         return Response({'error': 'Post not found.'}, status=HTTP_404_NOT_FOUND)
+    
     
     def list(self, request):
         queryset = self.list_queryset(request.user, Like, 'post__')

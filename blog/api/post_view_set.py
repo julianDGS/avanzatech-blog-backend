@@ -1,5 +1,3 @@
-from django.db.models import Q
-from django.contrib.auth.models import AnonymousUser
 from rest_framework import viewsets 
 from rest_framework.response import Response
 from rest_framework.status import *
@@ -20,10 +18,12 @@ class BlogPostViewSet(viewsets.GenericViewSet, ListQuerysetMixin):
     permission_classes = [AuthenticateAndPostEdit]
     pagination_class = BlogPostPagination
 
+
     def get_queryset(self, pk=None):
         if pk is None:
             return self.get_serializer().Meta.model.objects.all().order_by('-created_at')
         return self.get_serializer().Meta.model.objects.prefetch_related('reverse_post__category', 'reverse_post__permission', 'author').filter(id=pk).first()
+
 
     def create(self, request):
         data = request.data
@@ -35,6 +35,7 @@ class BlogPostViewSet(viewsets.GenericViewSet, ListQuerysetMixin):
             return Response(post_serializer.data, status=HTTP_201_CREATED)
         return Response(post_serializer.errors, status=HTTP_400_BAD_REQUEST)
     
+
     def update(self, request, pk=None):
         post = self.get_queryset(pk)
         if post:
@@ -48,6 +49,7 @@ class BlogPostViewSet(viewsets.GenericViewSet, ListQuerysetMixin):
             return Response(post_serializer.errors, status=HTTP_400_BAD_REQUEST)
         return Response({'error': 'Post not found.'}, status=HTTP_404_NOT_FOUND)
     
+
     def list(self, request):
         user = request.user
         posts = self.list_queryset(user, BlogPost)
@@ -58,6 +60,7 @@ class BlogPostViewSet(viewsets.GenericViewSet, ListQuerysetMixin):
         post_serializer = self.get_serializer(posts, many=True)
         return Response(post_serializer.data, status=HTTP_200_OK)
     
+
     def retrieve(self, request, pk=None):
         post = self.get_queryset(pk)
         if post:
