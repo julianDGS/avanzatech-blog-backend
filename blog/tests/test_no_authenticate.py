@@ -5,7 +5,7 @@ from blog.tests.factories.blog_post_factories import BlogPostFactory
 from permission.models import Category, CategoryName, Permission, PermissionName, PostPermission
 from permission.tests.factories.permission_factories import PostWithPermissionFactory
 from user.tests.factories.user_factories import TeamFactory, UserFactory
-from ..models import BlogPost, Like
+from ..models import BlogPost, Like, Comment
 from user.models import User
 
 class BlogPostWithNoAuthTest(APITestCase):
@@ -80,3 +80,12 @@ class BlogPostWithNoAuthTest(APITestCase):
         response = self.client.post('/like/', {'post_id': post_author.id}, format='json')
         self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
         self.assertEqual(len(Like.objects.filter(post_id=post_author.id)), 0)
+    
+    def test_view_can_handle_comments_from_anonymous_user(self):
+        self.assertFalse(self.user.is_admin)
+        post_author = BlogPostFactory(author=self.user)
+        self.assertEqual(len(Comment.objects.filter(post_id=post_author.id)), 0)
+        PostWithPermissionFactory.create_batch(4, post=post_author, permission=self.read)
+        response = self.client.post('/comment/', {'post_id': post_author.id, 'comment': 'some comment'}, format='json')
+        self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
+        self.assertEqual(len(Comment.objects.filter(post_id=post_author.id)), 0)

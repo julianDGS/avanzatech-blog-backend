@@ -33,7 +33,7 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
 
     def test_view_creates_unique_like_per_user(self):
         self.assertFalse(self.user.is_admin)
-        Like.objects.create(post=self.post_author, user=self.user)
+        LikeFactory.create(post=self.post_author, user=self.user)
         self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 1)
         PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.read)
         response = self.client.post(self.like_url,{'post_id': self.post_author.id}, format='json')
@@ -44,7 +44,7 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
 
     def test_view_deletes_like(self):
         self.assertFalse(self.user.is_admin)
-        Like.objects.create(post=self.post_author, user=self.user)
+        LikeFactory.create(post=self.post_author, user=self.user)
         self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 1)
         PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.read)
         response = self.client.delete(f'{self.like_url}{self.post_author.id}/')
@@ -54,7 +54,7 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
 
     def test_does_not_delete_like_when_no_read_access(self):
         self.assertFalse(self.user.is_admin)
-        Like.objects.create(post=self.post_author, user=self.user)
+        LikeFactory.create(post=self.post_author, user=self.user)
         self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 1)
         PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.none)
         response = self.client.delete(f'{self.like_url}{self.post_author.id}/')
