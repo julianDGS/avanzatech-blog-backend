@@ -5,10 +5,10 @@ from rest_framework.status import *
 
 from django_filters.rest_framework import DjangoFilterBackend
 
-from blog.api.serializers_like import LikeSerializer
+from blog.api.like_serializers import LikeSerializer
 from blog.models import BlogPost, Like
-from blog.pagination import LikePagination
-from mixins.get_mixin import ListQuerysetMixin
+from mixins.pagination_mixin import LikePagination
+from mixins.queryset_mixin import ListQuerysetMixin
 from permission.permissions import AuthenticateAndLikePermission
 
 class LikeViewSet(viewsets.GenericViewSet, ListQuerysetMixin):
@@ -46,7 +46,7 @@ class LikeViewSet(viewsets.GenericViewSet, ListQuerysetMixin):
         return Response({'error': 'Post not found.'}, status=HTTP_404_NOT_FOUND)
     
     def list(self, request):
-        queryset = self.get_like_list(request.user, Like, 'post__')
+        queryset = self.list_queryset(request.user, Like, 'post__')
         queryset = self.filter_queryset(queryset)
         page = self.paginate_queryset(queryset)
         if page is not None:

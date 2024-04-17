@@ -8,10 +8,10 @@ from rest_framework.parsers import JSONParser
 
 from blog.models import BlogPost
 
-from .serializers import BlogPostCreateSerializer, BlogPostSerializer
-from ..pagination import BlogPostPagination
+from .post_serializers import BlogPostCreateSerializer, BlogPostSerializer
+from mixins.pagination_mixin import BlogPostPagination
 from permission.permissions import AuthenticateAndPostEdit
-from mixins.get_mixin import ListQuerysetMixin
+from mixins.queryset_mixin import ListQuerysetMixin
 
 
 class BlogPostViewSet(viewsets.GenericViewSet, ListQuerysetMixin):
@@ -50,7 +50,7 @@ class BlogPostViewSet(viewsets.GenericViewSet, ListQuerysetMixin):
     
     def list(self, request):
         user = request.user
-        posts = self.get_post_list(user, BlogPost)
+        posts = self.list_queryset(user, BlogPost)
         page = self.paginate_queryset(self.filter_queryset(posts))
         if page is not None:
             post_serializer = self.get_serializer(page, many=True)

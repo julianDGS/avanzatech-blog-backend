@@ -1,6 +1,6 @@
 from rest_framework.routers import DefaultRouter
 
-from .view_sets import BlogPostViewSet
+from .post_view_set import BlogPostViewSet
 
 router = DefaultRouter()
 

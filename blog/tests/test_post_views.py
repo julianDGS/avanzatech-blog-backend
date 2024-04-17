@@ -1,55 +1,16 @@
 from django.urls import reverse
 from rest_framework.response import Response
-from rest_framework.test import APITestCase
 from rest_framework.status import *
 
-from user.tests.factories.user_factories import TeamFactory, UserFactory
-
-from ..models import BlogPost, Like
-from user.models import User
-from permission.models import PostPermission, Category, Permission, CategoryName, PermissionName
+from .setup import AuthenticateSetUp
+from ..models import BlogPost
+from permission.models import PostPermission
 from .factories.blog_post_factories import BlogPostFactory
 from permission.tests.factories.permission_factories import PostWithPermissionFactory
 
-class BlogPostWithAuthenticationTest(APITestCase):
-    
-    def setUp(self):
-        login_url = reverse('login')
-        self.post_url = '/post/'
 
-        self.user = UserFactory(email="user@mail.com", set_user_password="223344")
-        
-        self.public = Category.objects.create(name=CategoryName.PUBLIC)
-        self.auth = Category.objects.create(name=CategoryName.AUTHENTICATE)
-        self.team = Category.objects.create(name=CategoryName.TEAM)
-        self.author = Category.objects.create(name=CategoryName.AUTHOR)
-        self.read = Permission.objects.create(name=PermissionName.READ)
-        self.edit = Permission.objects.create(name=PermissionName.EDIT)
-        self.none = Permission.objects.create(name=PermissionName.NONE)
-        
-        self.data = {
-            'title': 'Leave sense plan.', 
-            'content': 'Effect somebody drug figure quality success. There government work commercial. Good various prevent suddenly. Concern create relationship. Want moment accept kitchen gun. Day popular generation bring stage.', 
-            'permissions': [
-                {"category_id": self.public.id, "permission_id": self.none.id},
-                {"category_id": self.auth.id, "permission_id": self.read.id},
-                {"category_id": self.team.id, "permission_id": self.edit.id},
-                {"category_id": self.author.id, "permission_id": self.edit.id}
-            ]
-        }
+class BlogPostWithAuthenticationTest(AuthenticateSetUp):
 
-        self.client.post(
-            login_url,
-            {
-                'username': self.user.email,
-                'password': "223344"
-            },
-            format='json'
-        )
-
-        self.post_author = BlogPostFactory(author=self.user)
-        self.post_team = BlogPostFactory(author=UserFactory(team=self.user.team))
-        self.post_authenticate = BlogPostFactory(author=UserFactory(team=TeamFactory(name='other team')))
 
     def test_view_assigns_author_from_logged_user(self):
         response = self.client.post(self.post_url, self.data, format='json')
@@ -57,6 +18,7 @@ class BlogPostWithAuthenticationTest(APITestCase):
         self.assertTrue(response.data['author'])
         self.assertTrue(response.data['id'])
         self.assertTrue(BlogPost.objects.first())
+
 
     def test_view_creates_post_with_all_permission(self):
         response =  self.client.post(
@@ -71,6 +33,7 @@ class BlogPostWithAuthenticationTest(APITestCase):
         permissions = PostPermission.objects.all()
         categories = [self.public, self.auth, self.team, self.author]
         self.assertTrue(all(permission.category in categories for permission in permissions))
+
 
     def test_view_can_handle_post_with_missing_fields(self):
         test_data = [
@@ -103,6 +66,7 @@ class BlogPostWithAuthenticationTest(APITestCase):
                 response: Response = self.client.post(self.post_url, data, format='json')
                 self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
 
+
     def test_view_can_handle_post_with_wrong_permission_category(self):
         data = {**self.data, 'permissions': [
                         {'category_id': self.public.id, 'permission_id': self.read.id}, 
@@ -114,6 +78,7 @@ class BlogPostWithAuthenticationTest(APITestCase):
         response: Response = self.client.post(self.post_url, data, format='json')
         self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['permissions'][0], "Category matching query does not exist.")
+
 
     def test_view_can_handle_post_with_wrong_permission_assigned_to_category(self):
         data = {**self.data, 'permissions': [
@@ -127,6 +92,7 @@ class BlogPostWithAuthenticationTest(APITestCase):
         self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['permissions'][0], "Permission matching query does not exist.")
     
+
     def test_view_can_handle_post_with_duplicate_permission_categories(self):
         data = {**self.data, 'permissions': [
                         {'category_id': self.public.id, 'permission_id': self.read.id}, 
@@ -138,6 +104,7 @@ class BlogPostWithAuthenticationTest(APITestCase):
         response: Response = self.client.post(self.post_url, data, format='json')
         self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['permissions'][0], "Missing permission for some category.")
+
 
     def test_view_updates_post_data_including_permissions(self):
         post = BlogPostFactory(author=self.user)
@@ -162,6 +129,7 @@ class BlogPostWithAuthenticationTest(APITestCase):
         )
         self.assertEqual(response.data['title'], self.data['title'])
         self.assertEqual(response.data['content'], self.data['content'])
+
 
     def test_view_can_handle_wrong_data_on_update(self):
         post = BlogPostFactory(author=self.user)
@@ -214,6 +182,7 @@ class BlogPostWithAuthenticationTest(APITestCase):
                 response: Response = self.client.post(self.post_url, data, format='json')
                 self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
 
+
     def test_view_updates_only_necesary_fields(self):
         post = BlogPostFactory(author=self.user)
         PostWithPermissionFactory(post=post, category=self.public, permission=self.edit)
@@ -231,6 +200,7 @@ class BlogPostWithAuthenticationTest(APITestCase):
         self.assertTrue(len(permissions), 4)
         self.assertEqual(response.data['id'], post.id)
         self.assertEqual(response.data['author'], self.user.id)
+
 
     def test_view_does_not_update_post_with_no_edit_permissions_by_user(self):
         self.assertFalse(self.user.is_admin)
@@ -259,6 +229,7 @@ class BlogPostWithAuthenticationTest(APITestCase):
                 response: Response = self.client.put(f'{self.post_url}{post_data.id}/', self.data, format='json')
                 self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
                 PostPermission.objects.filter(post=post_data, category__in=data['categories']).update(permission=self.edit)
+
 
     def test_view_update_post_with_no_edit_permissions_by_admin_user(self):
         admin = self.user
@@ -302,6 +273,7 @@ class BlogPostWithAuthenticationTest(APITestCase):
                 self.assertEqual(response.status_code, HTTP_200_OK)
                 self.assertEqual(len(response.data['results']), data['len'])
 
+
     def test_view_shows_correct_posts_with_user_as_team_member(self):
         response_login = self.client.post(reverse('login'),{'username': self.post_team.author.email, 'password': '1234'}, format='json')
         self.assertFalse(self.post_team.author.is_admin)
@@ -324,6 +296,7 @@ class BlogPostWithAuthenticationTest(APITestCase):
                 response = self.client.get(self.post_url, headers={'X-CSRFToken': response_login.cookies['csrftoken'].value})
                 self.assertEqual(response.status_code, HTTP_200_OK)
                 self.assertEqual(len(response.data['results']), data['len'])
+
 
     def test_view_shows_correct_posts_with_user_as_authenticated(self):
         response_login = self.client.post(reverse('login'),{'username': self.post_authenticate.author.email, 'password': '1234'}, format='json')
@@ -348,6 +321,7 @@ class BlogPostWithAuthenticationTest(APITestCase):
                 self.assertEqual(response.status_code, HTTP_200_OK)
                 self.assertEqual(len(response.data['results']), data['len'])
 
+
     def test_view_shows_empty_list_if_no_post_retrieved(self):
         self.assertFalse(self.user.is_admin)
         PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.none)
@@ -358,7 +332,8 @@ class BlogPostWithAuthenticationTest(APITestCase):
         response = self.client.get(self.post_url)
         self.assertEqual(response.status_code, HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 0)
-        
+
+
     def test_view_shows_404_if_no_valid_access_to_post(self):
         self.assertFalse(self.user.is_admin)
         PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.read)
@@ -376,6 +351,7 @@ class BlogPostWithAuthenticationTest(APITestCase):
                 response = self.client.get(f'{self.post_url}{post.id}/')
                 self.assertEqual(response.status_code, status)
 
+
     def test_view_pagination_includes_necessary_arguments(self):
         # current page, total pages, total count, next page URL, previous page URL. 10 items per page
         admin = self.user
@@ -392,64 +368,4 @@ class BlogPostWithAuthenticationTest(APITestCase):
         self.assertEqual(response.data['previous'], None)
         self.assertEqual(len(response.data['results']), 10)
 
-    def test_view_creates_like(self):
-        self.assertFalse(self.user.is_admin)
-        self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 0)
-        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.read)
-        response = self.client.post('/like/', {'post_id': self.post_author.id}, format='json')
-        self.assertEqual(response.status_code, HTTP_201_CREATED)
-        self.assertEqual(response.data['post']['id'], self.post_author.id)
-        self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 1)
-
     
-    def test_does_not_create_like_when_no_read_access(self):
-        self.assertFalse(self.user.is_admin)
-        self.assertEqual(len(Like.objects.filter(post_id=self.post_team.id)), 0)
-        PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.none)
-        response = self.client.post('/like/', {'post_id': self.post_team.id}, format='json')
-        self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
-        self.assertEqual(len(Like.objects.filter(post_id=self.post_team.id)), 0)
-               
-
-    def test_view_creates_unique_like_per_user(self):
-        self.assertFalse(self.user.is_admin)
-        Like.objects.create(post=self.post_author, user=self.user)
-        self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 1)
-        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.read)
-        response = self.client.post('/like/',{'post_id': self.post_author.id}, format='json')
-        self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data['non_field_errors'][0], "The fields post, user must make a unique set.")
-        self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 1)
-
-    def test_view_deletes_like(self):
-        self.assertFalse(self.user.is_admin)
-        Like.objects.create(post=self.post_author, user=self.user)
-        self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 1)
-        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.read)
-        response = self.client.delete(f'/like/{self.post_author.id}/')
-        self.assertEqual(response.status_code, HTTP_204_NO_CONTENT)
-        self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 0)
-
-    def test_does_not_delete_like_when_no_read_access(self):
-        self.assertFalse(self.user.is_admin)
-        Like.objects.create(post=self.post_author, user=self.user)
-        self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 1)
-        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.none)
-        response = self.client.delete(f'/like/{self.post_author.id}/')
-        self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
-        self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 1)
-
-    def test_view_creates_like_from_admin_without_permissions(self):
-        admin = self.user
-        admin.is_admin = True
-        admin.save()
-        self.assertTrue(self.user.is_admin)
-        self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 0)
-        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.none)
-        response = self.client.post('/like/', {'post_id': self.post_author.id}, format='json')
-        self.assertEqual(response.status_code, HTTP_201_CREATED)
-        self.assertEqual(response.data['post']['id'], self.post_author.id)
-        self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 1)
-
-    
-

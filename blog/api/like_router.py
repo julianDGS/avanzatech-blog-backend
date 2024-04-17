@@ -1,6 +1,6 @@
 from rest_framework.routers import DefaultRouter
 
-from blog.api.view_sets_like import LikeViewSet
+from blog.api.like_view_set import LikeViewSet
 
 router = DefaultRouter()
 
