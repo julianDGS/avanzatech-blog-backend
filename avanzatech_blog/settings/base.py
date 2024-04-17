@@ -15,7 +15,7 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env('SECRET_KEY')
+SECRET_KEY = env('SECRET_KEY', default='django-insecure-cz!$+=((ks5z*u*g5v%ey$#dq^rj-u#=98w+@_2r1wpu#hd*5_')
 
 
 # Application definition
