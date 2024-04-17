@@ -75,9 +75,113 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
         self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
         self.assertEqual(len(Comment.objects.filter(post_id=self.post_author.id)), 1)
 
-
-  
-        
-
     
+    def test_view_shows_correct_comments_with_user_as_author(self):
+        self.assertFalse(self.user.is_admin)
+        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.read)
+        PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.read)
+        PostWithPermissionFactory.create_batch(4, post=self.post_authenticate, permission=self.read)
+        CommentFactory.create_batch(3, post=self.post_author)
+        CommentFactory.create_batch(3, post=self.post_team)
+        CommentFactory.create_batch(3, post=self.post_authenticate)
 
+        test_data = [
+            {'category': self.author, 'post': self.post_author, 'len': 6},
+            {'category': self.team, 'post': self.post_team, 'len': 3},
+            {'category': self.auth, 'post': self.post_authenticate, 'len': 0},
+        ]
+
+        for data in test_data:
+            with self.subTest(data=data):
+                post_data = data['post']
+                PostPermission.objects.filter(post=post_data, category=data['category']).update(permission=self.none)
+                response = self.client.get(self.comment_url)
+                self.assertEqual(response.status_code, HTTP_200_OK)
+                self.assertEqual(len(response.data['results']), data['len'])
+
+
+    def test_view_shows_correct_comments_with_user_as_team_member(self):
+        response_login = self.client.post(reverse('login'),{'username': self.post_team.author.email, 'password': '1234'}, format='json')
+        self.assertFalse(self.post_team.author.is_admin)
+        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.edit)
+        PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.read)
+        PostWithPermissionFactory.create_batch(4, post=self.post_authenticate, permission=self.read)
+        CommentFactory.create_batch(3, post=self.post_author)
+        CommentFactory.create_batch(3, post=self.post_team)
+        CommentFactory.create_batch(3, post=self.post_authenticate)
+
+        test_data = [
+            {'category': self.author, 'post': self.post_author, 'len': 9},
+            {'category': self.team, 'post': self.post_team, 'len': 9},
+            {'category': self.auth, 'post': self.post_authenticate, 'len': 6},
+        ]
+
+        for data in test_data:
+            with self.subTest(data=data):
+                post_data = data['post']
+                PostPermission.objects.filter(post=post_data, category=data['category']).update(permission=self.none)
+                response = self.client.get(self.comment_url, headers={'X-CSRFToken': response_login.cookies['csrftoken'].value})
+                self.assertEqual(response.status_code, HTTP_200_OK)
+                self.assertEqual(len(response.data['results']), data['len'])
+
+
+    def test_view_shows_correct_comments_with_user_as_authenticated(self):
+        response_login = self.client.post(reverse('login'),{'username': self.post_authenticate.author.email, 'password': '1234'}, format='json')
+        self.assertFalse(self.post_authenticate.author.is_admin)
+        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.read)
+        PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.read)
+        PostWithPermissionFactory.create_batch(4, post=self.post_authenticate, permission=self.edit)
+        CommentFactory.create_batch(3, post=self.post_author)
+        CommentFactory.create_batch(3, post=self.post_team)
+        CommentFactory.create_batch(3, post=self.post_authenticate)
+
+        test_data = [
+            {'category': self.author, 'post': self.post_author, 'len': 9},
+            {'category': self.team, 'post': self.post_team, 'len': 9},
+            {'category': self.auth, 'post': self.post_authenticate, 'len': 9},
+        ]
+
+        for data in test_data:
+            with self.subTest(data=data):
+                post_data = data['post']
+                PostPermission.objects.filter(post=post_data, category=data['category']).update(permission=self.none)
+                response = self.client.get(self.comment_url, headers={'X-CSRFToken': response_login.cookies['csrftoken'].value})
+                self.assertEqual(response.status_code, HTTP_200_OK)
+                self.assertEqual(len(response.data['results']), data['len'])
+
+
+    def test_view_filter_by_post_and_user(self):
+        self.assertFalse(self.post_author.author.is_admin)
+        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.read)
+        CommentFactory.create(post=self.post_author, user=self.user)
+        CommentFactory.create_batch(3, post=self.post_author)
+
+        test_data = [
+            {'param' : f'post={self.post_author.id}', 'len': 4},
+            {'param' : f'user={self.user.id}', 'len': 1},
+            {'param' : f'post={self.post_author.id}&user={self.user.id}', 'len': 1}
+        ]
+
+        for data in test_data:
+            with self.subTest(data=data):
+                param = data['param']
+                response = self.client.get(f'{self.comment_url}?{param}')
+                self.assertEqual(response.status_code, HTTP_200_OK)
+                self.assertEqual(len(response.data['results']), data['len'])
+
+
+    def test_view_pagination_includes_necessary_arguments(self):
+        # current page, total pages, total count, next page URL, previous page URL. 20 items per page
+        admin = self.user
+        admin.is_admin = True
+        admin.save()
+        CommentFactory.create_batch(40)
+        response = self.client.get(self.comment_url)
+        self.assertEqual(response.status_code, HTTP_200_OK)
+        self.assertEqual(response.data['total_pages'], 4)
+        self.assertEqual(response.data['total_count'], 40)
+        self.assertEqual(response.data['current_page'], 1)
+        next_page_param = (response.data['next']).find('?')
+        self.assertEqual(response.data['next'][next_page_param:], '?page=2')
+        self.assertEqual(response.data['previous'], None)
+        self.assertEqual(len(response.data['results']), 10)

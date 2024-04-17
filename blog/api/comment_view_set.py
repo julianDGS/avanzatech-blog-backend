@@ -6,7 +6,8 @@ from rest_framework.status import *
 from django_filters.rest_framework import DjangoFilterBackend
 
 from blog.api.comment_serializers import CommentSerializer
-from blog.models import BlogPost
+from blog.models import BlogPost, Comment
+from mixins.pagination_mixin import CommentPagination
 from mixins.queryset_mixin import ListQuerysetMixin
 from permission.permissions import AuthenticateAndCommentPermission
 
@@ -15,6 +16,9 @@ class CommentViewSet(viewsets.GenericViewSet, ListQuerysetMixin):
     serializer_class = CommentSerializer
     parser_classes = (JSONParser,)
     permission_classes = [AuthenticateAndCommentPermission]
+    pagination_class = CommentPagination
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['post', 'user']
 
 
     def get_queryset(self):
@@ -45,3 +49,13 @@ class CommentViewSet(viewsets.GenericViewSet, ListQuerysetMixin):
                 return Response({'message', f'Comment from {request.user.nickname} deleted.'}, status=HTTP_204_NO_CONTENT)
         return Response({'error': 'Post not found.'}, status=HTTP_404_NOT_FOUND)
 
+
+    def list(self, request):
+        queryset = self.list_queryset(request.user, Comment, 'post__')
+        queryset = self.filter_queryset(queryset)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            likes_serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(likes_serializer.data)
+        likes_serializer = self.get_serializer(queryset, many=True)
+        return Response(likes_serializer.data, status=HTTP_200_OK)

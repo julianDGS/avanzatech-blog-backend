@@ -88,10 +88,11 @@ class PostPermissionTest(TestCase):
         
         read = PermissionFactory(name=PermissionName.READ)
         edit = PermissionFactory(name=PermissionName.EDIT)
+        none = PermissionFactory(name=PermissionName.NONE)
         test_data = [
             {"category": public, "permission": read},
             {"category": auth, "permission": edit},
-            {"category": team, "permission": None},
+            {"category": team, "permission": none},
             {"category": author, "permission": edit},
         ]
         for data in test_data:
@@ -110,7 +111,8 @@ class PostPermissionTest(TestCase):
         post = BlogPostFactory()
         public = CategoryFactory(name=CategoryName.PUBLIC)
         read = PermissionFactory(name=PermissionName.READ)
-        PostWithPermissionFactory(post=post, category=public, permission=None)
+        none = PermissionFactory(name=PermissionName.NONE)
+        PostWithPermissionFactory(post=post, category=public, permission=none)
 
         with self.assertRaises(IntegrityError):
             PostWithPermissionFactory(post=post, category=public, permission=read)

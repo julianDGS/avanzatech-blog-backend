@@ -16,3 +16,7 @@ class BlogPostPagination(PageNumberPagination):
 
 class LikePagination(BlogPostPagination):
     page_size = 20
+
+
+class CommentPagination(BlogPostPagination):
+    page_size = 10

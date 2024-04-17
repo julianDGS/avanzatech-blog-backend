@@ -137,16 +137,6 @@ class CommentModelTest(TestCase):
     def test_delete_comments_when_post_deleted(self):
         post = PostWith2CommentsFactory()
         post2 = PostWith2CommentsFactory()
-        '''
-        post = BlogPostFactory()
-        CommentFactory.create_batch(2, post=post)
-        post2 = BlogPostFactory()
-        CommentFactory.create_batch(1, post=post2)
-
-        post_db = BlogPost.objects.get(id=post.id)
-        # for comment in post_db.comments.all():
-        #     print(comment)        
-        '''
         comments_from_db = Comment.objects.filter(post_id=post.id)
         self.assertEqual(len(comments_from_db), 2)
 
