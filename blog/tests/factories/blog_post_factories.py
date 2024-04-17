@@ -1,6 +1,6 @@
 import factory
 
-from blog.models import BlogPost, Comment
+from blog.models import BlogPost, Comment, Like
 from user.tests.factories.user_factories import UserFactory
 
 class BlogPostFactory(factory.django.DjangoModelFactory):
@@ -10,6 +10,13 @@ class BlogPostFactory(factory.django.DjangoModelFactory):
     title = factory.Faker('sentence', nb_words=4)
     content = factory.Faker('paragraph', nb_sentences=10)
     author = factory.SubFactory(UserFactory)
+
+class LikeFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Like
+
+    user = factory.SubFactory(UserFactory)
+    post = factory.SubFactory(BlogPostFactory)
 
 class CommentFactory(factory.django.DjangoModelFactory):
     class Meta:

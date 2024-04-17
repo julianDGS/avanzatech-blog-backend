@@ -11,6 +11,7 @@ class AuthenticateSetUp(APITestCase):
         def setUp(self):
             login_url = reverse('login')
             self.post_url = '/post/'
+            self.like_url = '/like/'
 
             self.user = UserFactory(email="user@mail.com", set_user_password="223344")
             
