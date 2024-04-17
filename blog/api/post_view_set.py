@@ -73,8 +73,7 @@ class BlogPostViewSet(viewsets.GenericViewSet, ListQuerysetMixin):
     def destroy(self, request, pk=None):
         post = self.get_queryset(pk)
         if post:
-            if request.user.is_admin or (post.author.id == request.user.id):    
-                post.delete()
-                return Response({'message', 'Post deleted.'}, status=HTTP_204_NO_CONTENT)
-            return Response({'error': 'Cannot delete a post from another author.'}, status=HTTP_400_BAD_REQUEST)    
+            self.check_object_permissions(request, post)
+            post.delete()
+            return Response({'message', 'Post deleted.'}, status=HTTP_204_NO_CONTENT)
         return Response({'error': 'Post not found.'}, status=HTTP_404_NOT_FOUND)

@@ -249,17 +249,20 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
         self.assertEqual(response.data['title'], self.data['title'])
         self.assertEqual(response.data['content'], self.data['content'])
     
+
     def test_view_deletes_post(self):
+        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.edit)
         self.assertEqual(len(BlogPost.objects.filter(pk=self.post_author.id)), 1)
         response = self.client.delete(f'{self.post_url}{self.post_author.id}/')
         self.assertEqual(response.status_code, HTTP_204_NO_CONTENT)
         self.assertEqual(len(BlogPost.objects.filter(pk=self.post_author.id)), 0)
 
 
-    def test_view_deletes_post_only_by_author(self):
+    def test_view_does_not_delete_post_with_no_edit_permissions(self):
+        PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.read)
         self.assertEqual(len(BlogPost.objects.filter(pk=self.post_team.id)), 1)
         response = self.client.delete(f'{self.post_url}{self.post_team.id}/')
-        self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
         self.assertEqual(len(BlogPost.objects.filter(pk=self.post_team.id)), 1)
 
 
@@ -360,7 +363,7 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
         PostWithPermissionFactory.create_batch(4, post=self.post_authenticate, permission=self.edit)
         test_data = [
             {'post': self.post_author, 'status': HTTP_200_OK},
-            {'post': self.post_team, 'status': HTTP_403_FORBIDDEN},
+            {'post': self.post_team, 'status': HTTP_404_NOT_FOUND},
             {'post': self.post_authenticate, 'status': HTTP_200_OK},
         ]
         for data in test_data:

@@ -1,7 +1,11 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
+from rest_framework.exceptions import APIException
 
 from user.models import User
 from .models import CategoryName, PermissionName, PostPermission
+
+class RetrieveNotAccessException(APIException):
+    status_code = 404
 
 class AuthenticateAndPostEdit(BasePermission):
     
@@ -27,15 +31,23 @@ class AuthenticateAndPostEdit(BasePermission):
             if user.id == author.id:
                 if post_permissions_dict[str(CategoryName.AUTHOR)] != str(PermissionName.NONE):
                     return True
-                else:
+                elif self.like_comment_view_set:
                     return False
+                else:
+                    raise RetrieveNotAccessException()
             if user.team.id == author.team.id:
                 if post_permissions_dict[str(CategoryName.TEAM)] != str(PermissionName.NONE):
                     return True
-                else:
+                elif self.like_comment_view_set:
                     return False
+                else:
+                    raise RetrieveNotAccessException()
             if post_permissions_dict[str(CategoryName.AUTHENTICATE)] != str(PermissionName.NONE):
                 return True
+            elif self.like_comment_view_set:
+                return False
+            else:
+                raise RetrieveNotAccessException()
         else:
             if not user.is_authenticated:
                 if post_permissions_dict[str(CategoryName.PUBLIC)] == str(PermissionName.EDIT):
