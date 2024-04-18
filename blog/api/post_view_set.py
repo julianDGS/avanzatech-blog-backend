@@ -20,9 +20,8 @@ class BlogPostViewSet(viewsets.GenericViewSet, ListQuerysetMixin):
 
 
     def get_queryset(self, pk=None):
-        if pk is None:
-            return self.get_serializer().Meta.model.objects.all().order_by('-created_at')
-        return self.get_serializer().Meta.model.objects.prefetch_related('reverse_post__category', 'reverse_post__permission', 'author').filter(id=pk).first()
+        if pk is not None:
+            return self.get_serializer().Meta.model.objects.prefetch_related('reverse_post__category', 'reverse_post__permission', 'author').filter(id=pk).first()
 
 
     def create(self, request):
@@ -54,11 +53,8 @@ class BlogPostViewSet(viewsets.GenericViewSet, ListQuerysetMixin):
         user = request.user
         posts = self.list_queryset(user, BlogPost)
         page = self.paginate_queryset(self.filter_queryset(posts))
-        if page is not None:
-            post_serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(post_serializer.data)
-        post_serializer = self.get_serializer(posts, many=True)
-        return Response(post_serializer.data, status=HTTP_200_OK)
+        post_serializer = self.get_serializer(page, many=True)
+        return self.get_paginated_response(post_serializer.data)
     
 
     def retrieve(self, request, pk=None):
@@ -67,7 +63,7 @@ class BlogPostViewSet(viewsets.GenericViewSet, ListQuerysetMixin):
             self.check_object_permissions(request, post)
             post_serializer = self.get_serializer(post)
             return Response(post_serializer.data, status=HTTP_200_OK)
-        return Response(post_serializer.data, status=HTTP_404_NOT_FOUND)
+        return Response({'error': 'Post not found.'}, status=HTTP_404_NOT_FOUND)
     
 
     def destroy(self, request, pk=None):

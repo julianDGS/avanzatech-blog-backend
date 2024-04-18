@@ -131,14 +131,41 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
         self.assertEqual(response.data['content'], self.data['content'])
 
 
+    def test_view_updates_post_as_author(self):
+        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.none)
+        PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.none)
+        PostWithPermissionFactory.create_batch(4, post=self.post_authenticate, permission=self.none)
+        PostPermission.objects.filter(post=self.post_author, category=self.author).update(permission=self.edit)
+        response: Response = self.client.put(f'{self.post_url}{self.post_author.id}/', self.data, format='json')
+        self.assertEqual(response.status_code, HTTP_200_OK)
+        self.assertEqual(response.data['title'], self.data['title'])
+        self.assertEqual(response.data['content'], self.data['content'])
+
+
+    def test_view_updates_post_as_team_member(self):
+        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.none)
+        PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.none)
+        PostWithPermissionFactory.create_batch(4, post=self.post_authenticate, permission=self.none)
+        PostPermission.objects.filter(post=self.post_team, category=self.team).update(permission=self.edit)
+        response: Response = self.client.put(f'{self.post_url}{self.post_team.id}/', self.data, format='json')
+        self.assertEqual(response.status_code, HTTP_200_OK)
+        self.assertEqual(response.data['title'], self.data['title'])
+        self.assertEqual(response.data['content'], self.data['content'])
+
+
+    def test_view_updates_post_as_authenticate_user(self):
+        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.none)
+        PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.none)
+        PostWithPermissionFactory.create_batch(4, post=self.post_authenticate, permission=self.none)
+        PostPermission.objects.filter(post=self.post_authenticate, category=self.auth).update(permission=self.edit)
+        response: Response = self.client.put(f'{self.post_url}{self.post_authenticate.id}/', self.data, format='json')
+        self.assertEqual(response.status_code, HTTP_200_OK)
+        self.assertEqual(response.data['title'], self.data['title'])
+        self.assertEqual(response.data['content'], self.data['content'])
+
+
     def test_view_can_handle_wrong_data_on_update(self):
-        post = BlogPostFactory(author=self.user)
-        PostWithPermissionFactory(post=post, category=self.public, permission=self.edit)
-        PostWithPermissionFactory(post=post, category=self.auth, permission=self.edit)
-        PostWithPermissionFactory(post=post, category=self.team, permission=self.edit)
-        PostWithPermissionFactory(post=post, category=self.author, permission=self.edit)
-        permissions = PostPermission.objects.all()
-        self.assertTrue(len(permissions), 4)
+        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.edit)
         
         test_data = [
             {**self.data, 'title': None},
@@ -179,7 +206,7 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
 
         for data in test_data:    
             with self.subTest(data=data):
-                response: Response = self.client.post(self.post_url, data, format='json')
+                response: Response = self.client.put(f'{self.post_url}{self.post_author.id}/', data, format='json')
                 self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
 
 
@@ -202,32 +229,31 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
         self.assertEqual(response.data['author'], self.user.id)
 
 
-    def test_view_does_not_update_post_with_no_edit_permissions_by_user(self):
+    def test_view_does_not_update_post_with_no_edit_permissions_as_author(self):
         PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.edit)
         PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.edit)
         PostWithPermissionFactory.create_batch(4, post=self.post_authenticate, permission=self.edit)
-        permissions = PostPermission.objects.all()
-        self.assertTrue(len(permissions), 4)
+        PostPermission.objects.filter(post=self.post_author, category=self.author).update(permission=self.none)
+        response: Response = self.client.put(f'{self.post_url}{self.post_author.id}/', self.data, format='json')
+        self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
 
-        test_data = [
-            {'categories': (self.author,), 'post': self.post_author},
-            {'categories': (self.team,), 'post': self.post_team},
-            {'categories': (self.auth,), 'post': self.post_authenticate},
-            {'categories': (self.author, self.team), 'post': self.post_author},
-            {'categories': (self.auth, self.team), 'post': self.post_team},
-            {'categories': (self.author, self.auth), 'post': self.post_authenticate},
-            {'categories': (self.author, self.team), 'post': self.post_team},
-            {'categories': (self.auth, self.team), 'post': self.post_authenticate},
-            {'categories': (self.author, self.auth), 'post': self.post_author},
-        ]
 
-        for data in test_data:
-            with self.subTest(data=data):
-                post_data = data['post']
-                PostPermission.objects.filter(post=post_data, category__in=data['categories']).update(permission=self.none)
-                response: Response = self.client.put(f'{self.post_url}{post_data.id}/', self.data, format='json')
-                self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
-                PostPermission.objects.filter(post=post_data, category__in=data['categories']).update(permission=self.edit)
+    def test_view_does_not_update_post_with_no_edit_permissions_as_team(self):
+        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.edit)
+        PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.edit)
+        PostWithPermissionFactory.create_batch(4, post=self.post_authenticate, permission=self.edit)
+        PostPermission.objects.filter(post=self.post_team, category=self.team).update(permission=self.none)
+        response: Response = self.client.put(f'{self.post_url}{self.post_team.id}/', self.data, format='json')
+        self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
+
+
+    def test_view_does_not_update_post_with_no_edit_permissions_as_authenticate(self):
+        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.edit)
+        PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.edit)
+        PostWithPermissionFactory.create_batch(4, post=self.post_authenticate, permission=self.edit)
+        PostPermission.objects.filter(post=self.post_authenticate, category=self.auth).update(permission=self.none)
+        response: Response = self.client.put(f'{self.post_url}{self.post_authenticate.id}/', self.data, format='json')
+        self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
 
 
     def test_view_update_post_with_no_edit_permissions_by_admin_user(self):
@@ -250,6 +276,11 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
         self.assertEqual(response.data['content'], self.data['content'])
     
 
+    def test_view_shows_404_if_no_post_on_update(self):
+        response: Response = self.client.put(f'{self.post_url}{-1}/', self.data, format='json')
+        self.assertEqual(response.status_code, HTTP_404_NOT_FOUND)
+
+
     def test_view_deletes_post(self):
         PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.edit)
         self.assertEqual(len(BlogPost.objects.filter(pk=self.post_author.id)), 1)
@@ -258,22 +289,44 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
         self.assertEqual(len(BlogPost.objects.filter(pk=self.post_author.id)), 0)
 
 
-    def test_view_does_not_delete_post_with_no_edit_permissions(self):
+    def test_view_does_not_delete_post_with_no_edit_permissions_by_author(self):
+        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.read)
+        self.assertEqual(len(BlogPost.objects.filter(pk=self.post_author.id)), 1)
+        response = self.client.delete(f'{self.post_url}{self.post_author.id}/')
+        self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
+        self.assertEqual(len(BlogPost.objects.filter(pk=self.post_author.id)), 1)
+
+
+    def test_view_does_not_delete_post_with_no_edit_permissions_by_team(self):
         PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.read)
         self.assertEqual(len(BlogPost.objects.filter(pk=self.post_team.id)), 1)
         response = self.client.delete(f'{self.post_url}{self.post_team.id}/')
         self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
         self.assertEqual(len(BlogPost.objects.filter(pk=self.post_team.id)), 1)
 
+    
+    def test_view_does_not_delete_post_with_no_edit_permissions_by_authenticate(self):
+        PostWithPermissionFactory.create_batch(4, post=self.post_authenticate, permission=self.read)
+        self.assertEqual(len(BlogPost.objects.filter(pk=self.post_authenticate.id)), 1)
+        response = self.client.delete(f'{self.post_url}{self.post_authenticate.id}/')
+        self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
+        self.assertEqual(len(BlogPost.objects.filter(pk=self.post_authenticate.id)), 1)
+
 
     def test_view_admin_can_delete_post_without_permissions(self):
         admin = self.user
         admin.is_admin = True
         admin.save()
+        PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.none)
         self.assertEqual(len(BlogPost.objects.filter(pk=self.post_team.id)), 1)
         response = self.client.delete(f'{self.post_url}{self.post_team.id}/')
         self.assertEqual(response.status_code, HTTP_204_NO_CONTENT)
         self.assertEqual(len(BlogPost.objects.filter(pk=self.post_team.id)), 0)
+
+
+    def test_view_shows_404_if_no_post_on_delete(self):
+        response = self.client.delete(f'{self.post_url}{-1}/')
+        self.assertEqual(response.status_code, HTTP_404_NOT_FOUND)
 
 
     def test_view_shows_correct_posts_with_user_as_author(self):
@@ -357,21 +410,40 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
         self.assertEqual(len(response.data['results']), 0)
 
 
-    def test_view_shows_404_if_no_valid_access_to_post(self):
+    def test_shows_single_post(self):
+        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.read)
+        response = self.client.get(f'{self.post_url}{self.post_author.id}/')
+        self.assertEqual(response.status_code, HTTP_200_OK)
+        self.assertEqual(response.data['id'], self.post_author.id)
+
+
+    def test_view_shows_404_if_no_post_on_get(self):
+        response = self.client.get(f'{self.post_url}{-1}/')
+        self.assertEqual(response.status_code, HTTP_404_NOT_FOUND)
+
+
+    def test_view_shows_404_if_no_valid_access_to_post_by_author(self):
+        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.none)
+        PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.read)
+        PostWithPermissionFactory.create_batch(4, post=self.post_authenticate, permission=self.edit)
+        response = self.client.get(f'{self.post_url}{self.post_author.id}/')
+        self.assertEqual(response.status_code, HTTP_404_NOT_FOUND)
+    
+
+    def test_view_shows_404_if_no_valid_access_to_post_by_team(self):
         PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.read)
         PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.none)
         PostWithPermissionFactory.create_batch(4, post=self.post_authenticate, permission=self.edit)
-        test_data = [
-            {'post': self.post_author, 'status': HTTP_200_OK},
-            {'post': self.post_team, 'status': HTTP_404_NOT_FOUND},
-            {'post': self.post_authenticate, 'status': HTTP_200_OK},
-        ]
-        for data in test_data:
-            with self.subTest(data=data):
-                post = data['post']
-                status = data['status']
-                response = self.client.get(f'{self.post_url}{post.id}/')
-                self.assertEqual(response.status_code, status)
+        response = self.client.get(f'{self.post_url}{self.post_team.id}/')
+        self.assertEqual(response.status_code, HTTP_404_NOT_FOUND)
+
+
+    def test_view_shows_404_if_no_valid_access_to_post_by_authenthicate(self):
+        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.edit)
+        PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.read)
+        PostWithPermissionFactory.create_batch(4, post=self.post_authenticate, permission=self.none)
+        response = self.client.get(f'{self.post_url}{self.post_authenticate.id}/')
+        self.assertEqual(response.status_code, HTTP_404_NOT_FOUND)
 
 
     def test_view_pagination_includes_necessary_arguments(self):

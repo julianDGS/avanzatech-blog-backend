@@ -12,6 +12,7 @@ class BlogPostSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance: BlogPost):
         return {
+            'id': instance.id,
             'title': instance.title,
             'content': instance.content,
             'excerpt': instance.excerpt,
