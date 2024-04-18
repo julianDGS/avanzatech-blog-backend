@@ -12,7 +12,7 @@ from permission.tests.factories.permission_factories import PostWithPermissionFa
 class BlogPostWithAuthenticationTest(AuthenticateSetUp):
 
 
-    def test_view_creates_like(self):
+    def test_view_creates_comment_as_author(self):
         self.assertEqual(len(Comment.objects.filter(post_id=self.post_author.id)), 0)
         PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.read)
         response = self.client.post(
@@ -24,8 +24,71 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
         self.assertEqual(response.data['post']['id'], self.post_author.id)
         self.assertEqual(len(Comment.objects.filter(post_id=self.post_author.id)), 1)
 
+
+    def test_view_creates_comment_as_team(self):
+        self.assertEqual(len(Comment.objects.filter(post_id=self.post_team.id)), 0)
+        PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.read)
+        response = self.client.post(
+            self.comment_url, 
+            {'post_id': self.post_team.id, 'comment': 'some comment for some post from some user'}, 
+            format='json'
+        )
+        self.assertEqual(response.status_code, HTTP_201_CREATED)
+        self.assertEqual(response.data['post']['id'], self.post_team.id)
+        self.assertEqual(len(Comment.objects.filter(post_id=self.post_team.id)), 1)
+
     
-    def test_does_not_create_comment_when_no_read_access(self):
+    def test_view_creates_comment_as_authenticate(self):
+        self.assertEqual(len(Comment.objects.filter(post_id=self.post_authenticate.id)), 0)
+        PostWithPermissionFactory.create_batch(4, post=self.post_authenticate, permission=self.read)
+        response = self.client.post(
+            self.comment_url, 
+            {'post_id': self.post_authenticate.id, 'comment': 'some comment for some post from some user'}, 
+            format='json'
+        )
+        self.assertEqual(response.status_code, HTTP_201_CREATED)
+        self.assertEqual(response.data['post']['id'], self.post_authenticate.id)
+        self.assertEqual(len(Comment.objects.filter(post_id=self.post_authenticate.id)), 1)
+
+    
+    def test_view_can_handle_wrong_data_on_create(self):
+        self.assertEqual(len(Comment.objects.filter(post_id=self.post_author.id)), 0)
+        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.read)
+        response = self.client.post(
+            self.comment_url, 
+            {'post_id': self.post_author.id, 'comment': None}, 
+            format='json'
+        )
+        self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
+        self.assertEqual(len(Comment.objects.filter(post_id=self.post_author.id)), 0)
+
+
+    def test_view_does_not_create_comment_if_no_post_found(self):
+        self.assertEqual(len(Comment.objects.filter(post_id=self.post_author.id)), 0)
+        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.read)
+        response = self.client.post(
+            self.comment_url, 
+            {'post_id': -1, 'comment': 'some comment for some post from some user'}, 
+            format='json'
+        )
+        self.assertEqual(response.status_code, HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data['error'], 'Post not found.')
+        self.assertEqual(len(Comment.objects.filter(post_id=self.post_author.id)), 0)
+
+
+    def test_does_not_create_comment_when_no_read_access_as_author(self):
+        self.assertEqual(len(Comment.objects.filter(post_id=self.post_author.id)), 0)
+        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.none)
+        response = self.client.post(
+            self.comment_url, 
+            {'post_id': self.post_author.id, 'comment': 'some comment for some post from some user'}, 
+            format='json'
+        )
+        self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
+        self.assertEqual(len(Comment.objects.filter(post_id=self.post_author.id)), 0)
+
+    
+    def test_does_not_create_comment_when_no_read_access_as_team(self):
         self.assertEqual(len(Comment.objects.filter(post_id=self.post_team.id)), 0)
         PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.none)
         response = self.client.post(
@@ -35,6 +98,18 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
         )
         self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
         self.assertEqual(len(Comment.objects.filter(post_id=self.post_team.id)), 0)
+
+    
+    def test_does_not_create_comment_when_no_read_access(self):
+        self.assertEqual(len(Comment.objects.filter(post_id=self.post_authenticate.id)), 0)
+        PostWithPermissionFactory.create_batch(4, post=self.post_authenticate, permission=self.none)
+        response = self.client.post(
+            self.comment_url, 
+            {'post_id': self.post_authenticate.id, 'comment': 'some comment for some post from some user'}, 
+            format='json'
+        )
+        self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
+        self.assertEqual(len(Comment.objects.filter(post_id=self.post_authenticate.id)), 0)
 
 
     def test_view_creates_comment_from_admin_without_permissions(self):
@@ -63,7 +138,7 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
         self.assertEqual(len(Comment.objects.filter(post_id=self.post_author.id)), 0)
 
 
-    def test_does_not_delete_comment_when_no_read_access(self):
+    def test_does_not_delete_comment_when_no_read_access_as_author(self):
         CommentFactory.create(post=self.post_author, user=self.user)
         self.assertEqual(len(Comment.objects.filter(post_id=self.post_author.id)), 1)
         PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.none)
@@ -71,7 +146,35 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
         self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
         self.assertEqual(len(Comment.objects.filter(post_id=self.post_author.id)), 1)
 
+
+    def test_does_not_delete_comment_when_no_read_access_as_team(self):
+        CommentFactory.create(post=self.post_team, user=self.user)
+        self.assertEqual(len(Comment.objects.filter(post_id=self.post_team.id)), 1)
+        PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.none)
+        response = self.client.delete(f'{self.comment_url}{self.post_team.id}/')
+        self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
+        self.assertEqual(len(Comment.objects.filter(post_id=self.post_team.id)), 1)
+
     
+    def test_does_not_delete_comment_when_no_read_access_as_authenticate(self):
+        CommentFactory.create(post=self.post_authenticate, user=self.user)
+        self.assertEqual(len(Comment.objects.filter(post_id=self.post_authenticate.id)), 1)
+        PostWithPermissionFactory.create_batch(4, post=self.post_authenticate, permission=self.none)
+        response = self.client.delete(f'{self.comment_url}{self.post_authenticate.id}/')
+        self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
+        self.assertEqual(len(Comment.objects.filter(post_id=self.post_authenticate.id)), 1)
+
+
+    def test_does_not_delete_comment_if_no_post_found(self):
+        CommentFactory.create(post=self.post_author, user=self.user)
+        self.assertEqual(len(Comment.objects.filter(post_id=self.post_author.id)), 1)
+        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.edit)
+        response = self.client.delete(f'{self.comment_url}{-1}/')
+        self.assertEqual(response.status_code, HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data['error'], 'Post not found.')
+        self.assertEqual(len(Comment.objects.filter(post_id=self.post_author.id)), 1)
+    
+
     def test_view_shows_correct_comments_with_user_as_author(self):
         PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.read)
         PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.read)
