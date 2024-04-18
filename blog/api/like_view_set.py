@@ -20,10 +20,6 @@ class LikeViewSet(viewsets.GenericViewSet, ListQuerysetMixin):
     filterset_fields = ['post', 'user']
 
 
-    def get_queryset(self):
-        return self.get_serializer().Meta.model.objects.prefetch_related('post', 'user').all()
-
-
     def create(self, request):
         post = BlogPost.objects.filter(pk=request.data['post_id']).first()
         if post:
@@ -53,8 +49,5 @@ class LikeViewSet(viewsets.GenericViewSet, ListQuerysetMixin):
         queryset = self.list_queryset(request.user, Like, 'post__')
         queryset = self.filter_queryset(queryset)
         page = self.paginate_queryset(queryset)
-        if page is not None:
-            likes_serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(likes_serializer.data)
-        likes_serializer = self.get_serializer(queryset, many=True)
-        return Response(likes_serializer.data, status=HTTP_200_OK)
+        likes_serializer = self.get_serializer(page, many=True)
+        return self.get_paginated_response(likes_serializer.data)

@@ -12,21 +12,55 @@ from permission.tests.factories.permission_factories import PostWithPermissionFa
 class BlogPostWithAuthenticationTest(AuthenticateSetUp):
 
 
-    def test_view_creates_like(self):
-        self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 0)
+    def test_view_creates_like_as_author(self):
         PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.read)
+        self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 0)
         response = self.client.post(self.like_url, {'post_id': self.post_author.id}, format='json')
         self.assertEqual(response.status_code, HTTP_201_CREATED)
         self.assertEqual(response.data['post']['id'], self.post_author.id)
         self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 1)
 
     
-    def test_does_not_create_like_when_no_read_access(self):
+    def test_view_creates_like_as_team(self):
+        PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.read)
+        self.assertEqual(len(Like.objects.filter(post_id=self.post_team.id)), 0)
+        response = self.client.post(self.like_url, {'post_id': self.post_team.id}, format='json')
+        self.assertEqual(response.status_code, HTTP_201_CREATED)
+        self.assertEqual(response.data['post']['id'], self.post_team.id)
+        self.assertEqual(len(Like.objects.filter(post_id=self.post_team.id)), 1)
+
+
+    def test_view_creates_like_as_authenticate(self):
+        PostWithPermissionFactory.create_batch(4, post=self.post_authenticate, permission=self.read)
+        self.assertEqual(len(Like.objects.filter(post_id=self.post_authenticate.id)), 0)
+        response = self.client.post(self.like_url, {'post_id': self.post_authenticate.id}, format='json')
+        self.assertEqual(response.status_code, HTTP_201_CREATED)
+        self.assertEqual(response.data['post']['id'], self.post_authenticate.id)
+        self.assertEqual(len(Like.objects.filter(post_id=self.post_authenticate.id)), 1)
+
+    
+    def test_does_not_create_like_when_no_read_access_by_author(self):
+        self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 0)
+        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.none)
+        response = self.client.post(self.like_url, {'post_id': self.post_author.id}, format='json')
+        self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
+        self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 0)
+
+
+    def test_does_not_create_like_when_no_read_access_by_team(self):
         self.assertEqual(len(Like.objects.filter(post_id=self.post_team.id)), 0)
         PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.none)
         response = self.client.post(self.like_url, {'post_id': self.post_team.id}, format='json')
         self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
         self.assertEqual(len(Like.objects.filter(post_id=self.post_team.id)), 0)
+
+
+    def test_does_not_create_like_when_no_read_access_by_authenticate(self):
+        self.assertEqual(len(Like.objects.filter(post_id=self.post_authenticate.id)), 0)
+        PostWithPermissionFactory.create_batch(4, post=self.post_authenticate, permission=self.none)
+        response = self.client.post(self.like_url, {'post_id': self.post_authenticate.id}, format='json')
+        self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
+        self.assertEqual(len(Like.objects.filter(post_id=self.post_authenticate.id)), 0)
                
 
     def test_view_creates_unique_like_per_user(self):
@@ -39,6 +73,15 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
         self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 1)
 
 
+    def test_view_does_not_create_like_if_no_post_found(self):
+        self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 0)
+        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.edit)
+        response = self.client.post(self.like_url, {'post_id': -1}, format='json')
+        self.assertEqual(response.status_code, HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data['error'], 'Post not found.')
+        self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 0)
+
+
     def test_view_deletes_like(self):
         LikeFactory.create(post=self.post_author, user=self.user)
         self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 1)
@@ -48,13 +91,41 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
         self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 0)
 
 
-    def test_does_not_delete_like_when_no_read_access(self):
+    def test_does_not_delete_like_when_no_read_access_as_author(self):
         LikeFactory.create(post=self.post_author, user=self.user)
         self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 1)
         PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.none)
         response = self.client.delete(f'{self.like_url}{self.post_author.id}/')
         self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
         self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 1)
+
+    
+    def test_does_not_delete_like_when_no_read_access_as_team(self):
+        LikeFactory.create(post=self.post_team, user=self.user)
+        self.assertEqual(len(Like.objects.filter(post_id=self.post_team.id)), 1)
+        PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.none)
+        response = self.client.delete(f'{self.like_url}{self.post_team.id}/')
+        self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
+        self.assertEqual(len(Like.objects.filter(post_id=self.post_team.id)), 1)
+
+
+    def test_does_not_delete_like_when_no_read_access_as_authenticate(self):
+        LikeFactory.create(post=self.post_authenticate, user=self.user)
+        self.assertEqual(len(Like.objects.filter(post_id=self.post_authenticate.id)), 1)
+        PostWithPermissionFactory.create_batch(4, post=self.post_authenticate, permission=self.none)
+        response = self.client.delete(f'{self.like_url}{self.post_authenticate.id}/')
+        self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
+        self.assertEqual(len(Like.objects.filter(post_id=self.post_authenticate.id)), 1)
+
+
+    def test_view_does_not_delete_like_if_no_post_found(self):
+        LikeFactory.create(post=self.post_authenticate, user=self.user)
+        self.assertEqual(len(Like.objects.filter(post_id=self.post_authenticate.id)), 1)
+        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.edit)
+        response = self.client.delete(f'{self.like_url}{-1}/')
+        self.assertEqual(response.status_code, HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data['error'], 'Post not found.')
+        self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 0)
 
 
     def test_view_creates_like_from_admin_without_permissions(self):
