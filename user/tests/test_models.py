@@ -27,6 +27,18 @@ class UserModelTest(TestCase):
         self.assertEqual(nickname, user_created.nickname)
         self.assertTrue(check_password('1234', user_created.password))
 
+    def test_create_new_superuser(self):
+
+        user = User.objects.create_superuser(email='super@mail.com', password='1234')
+        users_from_db = User.objects.all()
+        self.assertEqual(len(users_from_db), 1)
+        
+        user_created = users_from_db[0]
+        self.assertEqual(user.email, user_created.email)
+        self.assertEqual(user.team.id, user_created.team.id)
+        self.assertTrue(user_created.is_superuser)
+        self.assertTrue(user_created.is_staff)
+        self.assertTrue(check_password('1234', user_created.password))
 
     def test_validate_unique_fields(self):
         UserFactory(email='probe@mail.com')
