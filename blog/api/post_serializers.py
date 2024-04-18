@@ -18,7 +18,8 @@ class BlogPostSerializer(serializers.ModelSerializer):
             'excerpt': instance.excerpt,
             'author': {'id': instance.author.id, 'nickname': instance.author.nickname, 'email': instance.author.email},
             'permissions': {cat_perm.category.name: cat_perm.permission.name for cat_perm in instance.reverse_post.all()},
-            'likes': instance.likes.count()
+            'likes': instance.likes.count(),
+            'comments': instance.comments.count()
         }
         
 class PostPermissionSerializer(serializers.Serializer):

@@ -15,7 +15,7 @@ class BlogPostWithNoAuthTest(APITestCase):
     def setUp(self):
         self.post_url = '/post/'
         self.user = User.objects.create_user(email="admin2@mail.com", password="223344")
-        public = Category.objects.create(name=CategoryName.PUBLIC)
+        self.public = Category.objects.create(name=CategoryName.PUBLIC)
         auth = Category.objects.create(name=CategoryName.AUTHENTICATE)
         team = Category.objects.create(name=CategoryName.TEAM)
         author = Category.objects.create(name=CategoryName.AUTHOR)
@@ -27,7 +27,7 @@ class BlogPostWithNoAuthTest(APITestCase):
             'content': 'Effect somebody drug figure quality success. There government work commercial.',
             'author': self.user.id,
             'permissions': [
-                {"category_id": public.id, "permission_id": self.none.id},
+                {"category_id": self.public.id, "permission_id": self.none.id},
                 {"category_id": auth.id, "permission_id": self.read.id},
                 {"category_id": team.id, "permission_id": self.edit.id},
                 {"category_id": author.id, "permission_id": self.edit.id}
@@ -79,12 +79,20 @@ class BlogPostWithNoAuthTest(APITestCase):
         self.assertEqual(len(response.data['results']), 1)
 
 
-    def test_view_shows_404_when_retrieve_and_no_auth_user(self):
+    def test_view_shows_404_when_retrieve_no_public_and_no_auth_user(self):
+        self.assertFalse(self.user.is_admin)
+        post_author = BlogPostFactory(author=self.user)
+        PostWithPermissionFactory.create_batch(4, post=post_author, permission=self.read)
+        PostPermission.objects.filter(post=post_author, category=self.public).update(permission=self.none)
+        response = self.client.get(f'{self.post_url}{post_author.id}/')
+        self.assertEqual(response.status_code, HTTP_404_NOT_FOUND)
+
+    def test_view_shows_public_post_when_no_auth_user(self):
         self.assertFalse(self.user.is_admin)
         post_author = BlogPostFactory(author=self.user)
         PostWithPermissionFactory.create_batch(4, post=post_author, permission=self.read)
         response = self.client.get(f'{self.post_url}{post_author.id}/')
-        self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, HTTP_200_OK)
 
 
     def test_view_can_handle_likes_from_anonymous_user(self):

@@ -71,5 +71,5 @@ class BlogPostViewSet(viewsets.GenericViewSet, ListQuerysetMixin):
         if post:
             self.check_object_permissions(request, post)
             post.delete()
-            return Response({'message', 'Post deleted.'}, status=HTTP_204_NO_CONTENT)
+            return Response({'message': 'Post deleted.'}, status=HTTP_204_NO_CONTENT)
         return Response({'error': 'Post not found.'}, status=HTTP_404_NOT_FOUND)
