@@ -51,7 +51,7 @@ class BlogPostViewSet(viewsets.GenericViewSet, ListQuerysetMixin):
 
     def list(self, request):
         user = request.user
-        posts = self.list_queryset(user, BlogPost)
+        posts = self.list_queryset(user, BlogPost).prefetch_related('likes', 'comments')
         page = self.paginate_queryset(self.filter_queryset(posts))
         post_serializer = self.get_serializer(page, many=True)
         return self.get_paginated_response(post_serializer.data)

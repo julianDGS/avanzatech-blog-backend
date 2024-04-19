@@ -46,7 +46,7 @@ class LikeViewSet(viewsets.GenericViewSet, ListQuerysetMixin):
     
     
     def list(self, request):
-        queryset = self.list_queryset(request.user, Like, 'post__')
+        queryset = self.list_queryset(request.user, Like, 'post__').prefetch_related('user')
         queryset = self.filter_queryset(queryset)
         page = self.paginate_queryset(queryset)
         likes_serializer = self.get_serializer(page, many=True)
