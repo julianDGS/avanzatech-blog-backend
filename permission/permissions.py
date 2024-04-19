@@ -15,7 +15,7 @@ class AuthenticateAndPostEdit(BasePermission):
         self.like_comment_view_set = like_comment_view_set
 
     def has_permission(self, request, view):
-        if not (view.action == 'create' or view.action == 'partial_update'):
+        if not (view.action == 'create' or view.action == 'partial_update' or (self.like_comment_view_set and view.action == 'destroy')):
             return True
         if request.user.is_authenticated:
             return True
@@ -27,7 +27,7 @@ class AuthenticateAndPostEdit(BasePermission):
         author: User = User.objects.get(id=obj.author.id)
         post_permissions = PostPermission.objects.filter(post_id=obj.id)
         post_permissions_dict = {permission.category.name: permission.permission.name for permission in post_permissions}
-        if request.method == 'GET' or self.like_comment_view_set:
+        if self.like_comment_view_set or request.method == 'GET':
             if not user.is_authenticated:
                 if post_permissions_dict[str(CategoryName.PUBLIC)] != str(PermissionName.NONE):
                     return True

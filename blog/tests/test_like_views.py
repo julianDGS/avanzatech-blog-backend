@@ -83,49 +83,58 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
 
 
     def test_view_deletes_like(self):
-        LikeFactory.create(post=self.post_author, user=self.user)
+        like = LikeFactory.create(post=self.post_author, user=self.user)
         self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 1)
         PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.read)
-        response = self.client.delete(f'{self.like_url}{self.post_author.id}/')
+        response = self.client.delete(f'{self.like_url}{like.id}/')
         self.assertEqual(response.status_code, HTTP_204_NO_CONTENT)
         self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 0)
 
 
     def test_does_not_delete_like_when_no_read_access_as_author(self):
-        LikeFactory.create(post=self.post_author, user=self.user)
+        like = LikeFactory.create(post=self.post_author, user=self.user)
         self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 1)
         PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.none)
-        response = self.client.delete(f'{self.like_url}{self.post_author.id}/')
+        response = self.client.delete(f'{self.like_url}{like.id}/')
         self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
         self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 1)
 
     
     def test_does_not_delete_like_when_no_read_access_as_team(self):
-        LikeFactory.create(post=self.post_team, user=self.user)
+        like = LikeFactory.create(post=self.post_team, user=self.user)
         self.assertEqual(len(Like.objects.filter(post_id=self.post_team.id)), 1)
         PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.none)
-        response = self.client.delete(f'{self.like_url}{self.post_team.id}/')
+        response = self.client.delete(f'{self.like_url}{like.id}/')
         self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
         self.assertEqual(len(Like.objects.filter(post_id=self.post_team.id)), 1)
 
 
     def test_does_not_delete_like_when_no_read_access_as_authenticate(self):
-        LikeFactory.create(post=self.post_authenticate, user=self.user)
+        like = LikeFactory.create(post=self.post_authenticate, user=self.user)
         self.assertEqual(len(Like.objects.filter(post_id=self.post_authenticate.id)), 1)
         PostWithPermissionFactory.create_batch(4, post=self.post_authenticate, permission=self.none)
-        response = self.client.delete(f'{self.like_url}{self.post_authenticate.id}/')
+        response = self.client.delete(f'{self.like_url}{like.id}/')
         self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
         self.assertEqual(len(Like.objects.filter(post_id=self.post_authenticate.id)), 1)
 
 
-    def test_view_does_not_delete_like_if_no_post_found(self):
+    def test_view_does_not_delete_like_if_not_found(self):
         LikeFactory.create(post=self.post_authenticate, user=self.user)
         self.assertEqual(len(Like.objects.filter(post_id=self.post_authenticate.id)), 1)
-        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.edit)
+        PostWithPermissionFactory.create_batch(4, post=self.post_authenticate, permission=self.edit)
         response = self.client.delete(f'{self.like_url}{-1}/')
         self.assertEqual(response.status_code, HTTP_404_NOT_FOUND)
-        self.assertEqual(response.data['error'], 'Post not found.')
+        self.assertEqual(response.data['error'], 'Like not found.')
         self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 0)
+
+    def test_view_does_not_delete_like_from_another_user(self):
+        like = LikeFactory.create(post=self.post_author, user=self.post_team.author)
+        self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 1)
+        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.edit)
+        response = self.client.delete(f'{self.like_url}{like.id}/')
+        self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'], 'You have not liked this post.')
+        self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 1)
 
 
     def test_view_creates_like_from_admin_without_permissions(self):

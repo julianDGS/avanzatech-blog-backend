@@ -35,14 +35,14 @@ class LikeViewSet(viewsets.GenericViewSet, ListQuerysetMixin):
     
 
     def destroy(self, request, pk=None):
-        post = BlogPost.objects.filter(pk=pk).first()
-        if post:
-            like = self.get_serializer().Meta.model.objects.filter(post_id=post.id, user_id=request.user.id)
-            if like:
-                self.check_object_permissions(request, post)
+        like = self.get_serializer().Meta.model.objects.filter(pk=pk).first()        
+        if like:
+            if like.user.id == request.user.id:
+                self.check_object_permissions(request, like.post)
                 like.delete()
                 return Response({'message': f'Like from {request.user.nickname} deleted.'}, status=HTTP_204_NO_CONTENT)
-        return Response({'error': 'Post not found.'}, status=HTTP_404_NOT_FOUND)
+            return Response({'error': 'You have not liked this post.'}, status=HTTP_400_BAD_REQUEST)
+        return Response({'error': 'Like not found.'}, status=HTTP_404_NOT_FOUND)
     
     
     def list(self, request):
