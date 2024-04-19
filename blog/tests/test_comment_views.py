@@ -130,48 +130,58 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
 
 
     def test_view_deletes_comment(self):
-        CommentFactory.create(post=self.post_author, user=self.user)
+        comment = CommentFactory.create(post=self.post_author, user=self.user)
         self.assertEqual(len(Comment.objects.filter(post_id=self.post_author.id)), 1)
         PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.read)
-        response = self.client.delete(f'{self.comment_url}{self.post_author.id}/')
+        response = self.client.delete(f'{self.comment_url}{comment.id}/')
         self.assertEqual(response.status_code, HTTP_204_NO_CONTENT)
         self.assertEqual(len(Comment.objects.filter(post_id=self.post_author.id)), 0)
 
 
     def test_does_not_delete_comment_when_no_read_access_as_author(self):
-        CommentFactory.create(post=self.post_author, user=self.user)
+        comment = CommentFactory.create(post=self.post_author, user=self.user)
         self.assertEqual(len(Comment.objects.filter(post_id=self.post_author.id)), 1)
         PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.none)
-        response = self.client.delete(f'{self.comment_url}{self.post_author.id}/')
+        response = self.client.delete(f'{self.comment_url}{comment.id}/')
         self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
         self.assertEqual(len(Comment.objects.filter(post_id=self.post_author.id)), 1)
 
 
     def test_does_not_delete_comment_when_no_read_access_as_team(self):
-        CommentFactory.create(post=self.post_team, user=self.user)
+        comment = CommentFactory.create(post=self.post_team, user=self.user)
         self.assertEqual(len(Comment.objects.filter(post_id=self.post_team.id)), 1)
         PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.none)
-        response = self.client.delete(f'{self.comment_url}{self.post_team.id}/')
+        response = self.client.delete(f'{self.comment_url}{comment.id}/')
         self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
         self.assertEqual(len(Comment.objects.filter(post_id=self.post_team.id)), 1)
 
     
     def test_does_not_delete_comment_when_no_read_access_as_authenticate(self):
-        CommentFactory.create(post=self.post_authenticate, user=self.user)
+        comment = CommentFactory.create(post=self.post_authenticate, user=self.user)
         self.assertEqual(len(Comment.objects.filter(post_id=self.post_authenticate.id)), 1)
         PostWithPermissionFactory.create_batch(4, post=self.post_authenticate, permission=self.none)
-        response = self.client.delete(f'{self.comment_url}{self.post_authenticate.id}/')
+        response = self.client.delete(f'{self.comment_url}{comment.id}/')
         self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
         self.assertEqual(len(Comment.objects.filter(post_id=self.post_authenticate.id)), 1)
 
 
-    def test_does_not_delete_comment_if_no_post_found(self):
+    def test_does_not_delete_comment_if_no_found(self):
         CommentFactory.create(post=self.post_author, user=self.user)
         self.assertEqual(len(Comment.objects.filter(post_id=self.post_author.id)), 1)
         PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.edit)
         response = self.client.delete(f'{self.comment_url}{-1}/')
         self.assertEqual(response.status_code, HTTP_404_NOT_FOUND)
-        self.assertEqual(response.data['error'], 'Post not found.')
+        self.assertEqual(response.data['error'], 'Comment not found.')
+        self.assertEqual(len(Comment.objects.filter(post_id=self.post_author.id)), 1)
+
+
+    def test_view_does_not_delete_comment_from_another_user(self):
+        comment = CommentFactory.create(post=self.post_author, user=self.post_team.author)
+        self.assertEqual(len(Comment.objects.filter(post_id=self.post_author.id)), 1)
+        PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.edit)
+        response = self.client.delete(f'{self.comment_url}{comment.id}/')
+        self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'], 'You have not commented this post.')
         self.assertEqual(len(Comment.objects.filter(post_id=self.post_author.id)), 1)
     
 

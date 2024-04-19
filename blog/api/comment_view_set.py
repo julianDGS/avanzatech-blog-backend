@@ -36,14 +36,14 @@ class CommentViewSet(viewsets.GenericViewSet, ListQuerysetMixin):
     
 
     def destroy(self, request, pk=None):
-        post = BlogPost.objects.filter(pk=pk).first()
-        if post:
-            comment = self.get_serializer().Meta.model.objects.filter(post_id=post.id, user_id=request.user.id)
-            if comment:
-                self.check_object_permissions(request, post)
+        comment = self.get_serializer().Meta.model.objects.filter(pk=pk).first()        
+        if comment:
+            if comment.user.id == request.user.id:
+                self.check_object_permissions(request, comment.post)
                 comment.delete()
                 return Response({'message': f'Comment from {request.user.nickname} deleted.'}, status=HTTP_204_NO_CONTENT)
-        return Response({'error': 'Post not found.'}, status=HTTP_404_NOT_FOUND)
+            return Response({'error': 'You have not commented this post.'}, status=HTTP_400_BAD_REQUEST)
+        return Response({'error': 'Comment not found.'}, status=HTTP_404_NOT_FOUND)
 
 
     def list(self, request):
