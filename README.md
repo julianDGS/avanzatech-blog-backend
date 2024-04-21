@@ -25,7 +25,7 @@ This is a REST API application, developed with Django Rest Framework, to emulate
 
 ## Setup using Docker
 
-Clone the repository found in [`https://github.com/julianDGS/avanzatech_blog`](https://github.com/julianDGS/avanzatech_blog) from git hub.
+Clone the repository [`https://github.com/julianDGS/avanzatech_blog`](https://github.com/julianDGS/avanzatech_blog) from git hub.
 
 1. Install docker, docker-compose.
 2. Create a file in the root of the project and name it `.env` . In this file, the following variables should be defined, as in the following example:
@@ -48,7 +48,7 @@ Clone the repository found in [`https://github.com/julianDGS/avanzatech_blog`](h
 
 ## Manual Setup
 
-Clone the repository found in [`https://github.com/julianDGS/avanzatech_blog`](https://github.com/julianDGS/avanzatech_blog) from git hub.
+Clone the repository [`https://github.com/julianDGS/avanzatech_blog`](https://github.com/julianDGS/avanzatech_blog) from git hub.
 
 Using Python 3.11.9:
 
