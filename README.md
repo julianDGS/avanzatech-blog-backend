@@ -293,47 +293,47 @@ Expected response body example: `HTTP 200`
     "total_pages": 2,
     "results": [
         {
-				    "id": 1,
-				    "title": "Post Title Updated.",
-				    "content": "Some edit content for some post created.",
-				    "excerpt": "Some edit content for some post created.",
-				    "author": {
-				        "id": 1,
-				        "nickname": "some",
-				        "email": "user"
-				    },
-				    "permissions": {
-				        "public": "none",
-				        "auth": "edit",
-				        "team": "read",
-				        "author": "edit"
-				    },
-				    "likes": 0
-				    "comments": 0
-				},
+	    "id": 1,
+	    "title": "Post Title Updated.",
+	    "content": "Some edit content for some post created.",
+	    "excerpt": "Some edit content for some post created.",
+	    "author": {
+		"id": 1,
+		"nickname": "some",
+		"email": "user"
+	    },
+	    "permissions": {
+		"public": "none",
+		"auth": "edit",
+		"team": "read",
+		"author": "edit"
+	    },
+	    "likes": 0
+	    "comments": 0
+	},
 				
         "..."
         
         ,{
-				    "id": 10,
-				    "title": "Post Title 10.",
-				    "content": "Some content for some post created 10.",
-				    "excerpt": "Some edit content for some post created 10",
-				    "author": {
-				        "id": 1,
-				        "nickname": "some",
-				        "email": "user"
-				    },
-				    "permissions": {
-				        "public": "none",
-				        "auth": "edit",
-				        "team": "read",
-				        "author": "edit"
-				    },
-				    "likes": 0
-				    "comments": 0
-				}
-		]
+	    "id": 10,
+	    "title": "Post Title 10.",
+	    "content": "Some content for some post created 10.",
+	    "excerpt": "Some edit content for some post created 10",
+	    "author": {
+		"id": 1,
+		"nickname": "some",
+		"email": "user"
+	    },
+	    "permissions": {
+		"public": "none",
+		"auth": "edit",
+		"team": "read",
+		"author": "edit"
+	    },
+	    "likes": 0
+	    "comments": 0
+	}
+    ]
 }
 ```
 
@@ -414,33 +414,33 @@ Expected response body example: `HTTP 200`
     "total_pages": 2,
     "results": [
         {
-				    "id": 1,
-				    "post": {
-				        "id": 1,
-				        "title": "Post Title."
-				    },
-				    "user": {
-				        "id": 1,
-				        "nickname": "some",
-				        "email": "some@mail.com"
-				    }
-				},
+	    "id": 1,
+	    "post": {
+		"id": 1,
+		"title": "Post Title."
+	    },
+	    "user": {
+		"id": 1,
+		"nickname": "some",
+		"email": "some@mail.com"
+	    }
+	},
         
         "..."
         
         ,{
-				    "id": 20,
-				    "post": {
-				        "id": 1,
-				        "title": "Post Title."
-				    },
-				    "user": {
-				        "id": 20,
-				        "nickname": "some20",
-				        "email": "some20@mail.com"
-				    }
-				}
-		]
+	    "id": 20,
+	    "post": {
+		"id": 1,
+		"title": "Post Title."
+	    },
+	    "user": {
+		"id": 20,
+		"nickname": "some20",
+		"email": "some20@mail.com"
+	    }
+	}
+   ]
 }
 ```
 
@@ -523,35 +523,35 @@ Expected response body example: `HTTP 200`
     "total_pages": 2,
     "results": [
         {
-				    "id": 1
-				    "comment": "some comment from user",
-				    "post": {
-				        "id": 1,
-				        "title": "Post Title."
-				    },
-				    "user": {
-				        "id": 1,
-				        "nickname": "some",
-				        "email": "some@mail.com"
-				    }
-				},
+	    "id": 1
+	    "comment": "some comment from user",
+	    "post": {
+		"id": 1,
+		"title": "Post Title."
+	    },
+	    "user": {
+		"id": 1,
+		"nickname": "some",
+		"email": "some@mail.com"
+	    }
+	},
 				
         "..."
         
         ,{
-				    "id": 10,
-				    "comment": "some ten comments from user",
-				    "post": {
-				        "id": 1,
-				        "title": "Post Title."
-				    },
-				    "user": {
-				        "id": 20,
-				        "nickname": "some20",
-				        "email": "some20@mail.com"
-				    }
-				}
-		]
+	    "id": 10,
+	    "comment": "some ten comments from user",
+	    "post": {
+		"id": 1,
+		"title": "Post Title."
+	    },
+	    "user": {
+		"id": 20,
+		"nickname": "some20",
+		"email": "some20@mail.com"
+	    }
+	}
+   ]
 }
 ```
 
