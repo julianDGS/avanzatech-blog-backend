@@ -1,5 +1,6 @@
 from permission.tests.factories.permission_factories import PermissionFactory, CategoryFactory
-from permission.models import PermissionName, CategoryName, Category
+from permission.models import PermissionName, CategoryName
+from user.tests.factories.user_factories import TeamFactory
 from user.models import User
 
 
@@ -14,7 +15,11 @@ def create_permissions():
     PermissionFactory(name=PermissionName.EDIT)
     PermissionFactory(name=PermissionName.NONE)
 
+def create_team():
+    TeamFactory(id=1, name='default_team')
+
 def init_data():
+    create_team()
     create_categories()
     create_permissions()
     print("Initial data for categories and permissions loaded")

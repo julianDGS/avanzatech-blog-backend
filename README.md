@@ -153,11 +153,11 @@ Expected response body example: `HTTP 201`
 
 ## Logout `GET`
 
-Close the active session for a user
+Close the active session for a user. `Authentication Required`
 
 URL: 
 
-`http://localhost:8000/user/login`
+`http://localhost:8000/user/logout/`
 
 Expected response body example: `HTTP 200`
 
