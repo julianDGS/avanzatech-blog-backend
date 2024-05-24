@@ -1,7 +1,6 @@
 from permission.tests.factories.permission_factories import PermissionFactory, CategoryFactory
 from permission.models import PermissionName, CategoryName
-from user.tests.factories.user_factories import TeamFactory
-from user.models import User
+from user.models import User, Team
 
 
 def create_categories():
@@ -16,7 +15,12 @@ def create_permissions():
     PermissionFactory(name=PermissionName.NONE)
 
 def create_team():
-    TeamFactory(id=1, name='default_team')
+    team = Team.objects.first();
+    if not team:
+        Team.objects.create(id=1, name='rookie')
+    elif team.id != 1:
+        team.delete()
+        Team.objects.create(id=1, name='rookie')
 
 def init_data():
     create_team()

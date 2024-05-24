@@ -55,7 +55,7 @@ class UserModelTest(TestCase):
             team.save()
 
     def test_delete_team(self):
-        team = TeamFactory()
+        team = TeamFactory(id=2)
         UserFactory(team=team)
         default_team = Team.objects.get(pk=1)
         

@@ -13,7 +13,6 @@ class UserFactory(factory.django.DjangoModelFactory):
         model = User
     
     email = factory.Faker('email')
-    team = factory.SubFactory(TeamFactory)
     name = factory.sequence(lambda n: "Name %s" % n)
     last_name = factory.sequence(lambda n: "Last Name %s" % n)
 

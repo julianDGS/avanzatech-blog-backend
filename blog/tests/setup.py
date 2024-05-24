@@ -15,6 +15,7 @@ class AuthenticateSetUp(APITestCase):
             self.comment_url = '/comment/'
 
             self.user = UserFactory(email="user@mail.com", set_user_password="223344")
+            # import pdb; pdb.set_trace()
             
             self.public = Category.objects.create(name=CategoryName.PUBLIC)
             self.auth = Category.objects.create(name=CategoryName.AUTHENTICATE)
@@ -46,5 +47,5 @@ class AuthenticateSetUp(APITestCase):
 
             self.post_author = BlogPostFactory(author=self.user)
             self.post_team = BlogPostFactory(author=UserFactory(team=self.user.team))
-            self.post_authenticate = BlogPostFactory(author=UserFactory(team=TeamFactory(name='other team')))
+            self.post_authenticate = BlogPostFactory(author=UserFactory(team=TeamFactory(id=2, name='other team')))
             self.assertFalse(self.user.is_admin)

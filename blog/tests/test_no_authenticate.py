@@ -67,7 +67,7 @@ class BlogPostWithNoAuthTest(APITestCase):
         self.assertFalse(self.user.is_admin)
         post_author = BlogPostFactory(author=self.user)
         post_team = BlogPostFactory(author=UserFactory(team=self.user.team))
-        post_authenticate = BlogPostFactory(author=UserFactory(team=TeamFactory(name='other team')))
+        post_authenticate = BlogPostFactory(author=UserFactory(team=TeamFactory(id=2, name='other team')))
         PostWithPermissionFactory.create_batch(4, post=post_author, permission=self.none)
         PostWithPermissionFactory.create_batch(4, post=post_team, permission=self.none)
         PostWithPermissionFactory.create_batch(4, post=post_authenticate, permission=self.edit)

@@ -36,7 +36,12 @@ class ListQuerysetMixin:
     
     def list_queryset(self, user, model, reverse_attr=""):
         global_filter = self.__get_list_queryset(user, reverse_attr)
-        all_data = model.objects.prefetch_related(f'{reverse_attr}reverse_post__category', f'{reverse_attr}reverse_post__permission', f'{reverse_attr}author').all()
+        all_data = model.objects.prefetch_related(
+            f'{reverse_attr}reverse_post__category', 
+            f'{reverse_attr}reverse_post__permission', 
+            f'{reverse_attr}author',
+            f'{reverse_attr}author__team'
+        ).all()
         if not global_filter:
             return all_data.order_by('-created_at')    
         return all_data.filter(global_filter).order_by('-created_at')
