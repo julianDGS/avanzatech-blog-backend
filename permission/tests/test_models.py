@@ -23,8 +23,8 @@ class PermissionTest(TestCase):
         permission_created = permissions_from_db[0]
         self.assertEqual('read', permission_created.name)
         self.assertTrue(permission.id)
-        self.assertEqual(permission_created.created_at, permission_created.updated_at.date())
-        self.assertEqual(permission_created.created_at, created_date)
+        self.assertEqual(permission_created.created_at.date(), permission_created.updated_at.date())
+        self.assertEqual(permission_created.created_at.date(), created_date)
     
     def test_create_new_edit_permission(self):        
         permission = Permission(name=PermissionName.EDIT)
@@ -37,8 +37,8 @@ class PermissionTest(TestCase):
         permission_created = permissions_from_db[0]
         self.assertEqual('edit', permission_created.name)
         self.assertTrue(permission.id)
-        self.assertEqual(permission_created.created_at, permission_created.updated_at.date())
-        self.assertEqual(permission_created.created_at, created_date)
+        self.assertEqual(permission_created.created_at.date(), permission_created.updated_at.date())
+        self.assertEqual(permission_created.created_at.date(), created_date)
 
     def test_validate_required_fields(self):
         with self.assertRaises(IntegrityError):
@@ -63,8 +63,8 @@ class CategoryTest(TestCase):
         category_created = categories_from_db[0]
         self.assertEqual(category.name, 'public')
         self.assertTrue(category.id)
-        self.assertEqual(category_created.created_at, category_created.updated_at.date())
-        self.assertEqual(category_created.created_at, created_date)
+        self.assertEqual(category_created.created_at.date(), category_created.updated_at.date())
+        self.assertEqual(category_created.created_at.date(), created_date)
 
     def test_validate_required_fields(self):
         with self.assertRaises(IntegrityError):

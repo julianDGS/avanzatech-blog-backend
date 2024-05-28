@@ -24,8 +24,8 @@ class BlogModelTest(TestCase):
         self.assertEqual(blog_post.title, post_created.title)
         self.assertEqual(blog_post.author.id, post_created.author.id)
         self.assertEqual(post_created.excerpt, excerpt)
-        self.assertEqual(post_created.created_at, post_created.updated_at.date())
-        self.assertEqual(post_created.created_at, created_date)
+        self.assertEqual(post_created.created_at.date(), post_created.updated_at.date())
+        self.assertEqual(post_created.created_at.date(), created_date)
 
     def test_validate_required_fields(self):
         with self.assertRaises(IntegrityError):
@@ -118,8 +118,8 @@ class CommentModelTest(TestCase):
         comment_created = comments_from_db[0]
         self.assertEqual(comment.post.id, comment_created.post.id)
         self.assertEqual(comment.user.id, comment_created.user.id)
-        self.assertEqual(comment_created.created_at, comment_created.updated_at.date())
-        self.assertEqual(comment_created.created_at, created_date)
+        self.assertEqual(comment_created.created_at.date(), comment_created.updated_at.date())
+        self.assertEqual(comment_created.created_at.date(), created_date)
 
     def test_delete_comments_when_user_deleted(self):
         user = UserWith2CommentsFactory()

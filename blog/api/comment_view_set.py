@@ -41,7 +41,7 @@ class CommentViewSet(viewsets.GenericViewSet, ListQuerysetMixin):
             if comment.user.id == request.user.id:
                 self.check_object_permissions(request, comment.post)
                 comment.delete()
-                return Response({'message': f'Comment from {request.user.nickname} deleted.'}, status=HTTP_204_NO_CONTENT)
+                return Response(status=HTTP_204_NO_CONTENT)
             return Response({'error': 'You have not commented this post.'}, status=HTTP_400_BAD_REQUEST)
         return Response({'error': 'Comment not found.'}, status=HTTP_404_NOT_FOUND)
 

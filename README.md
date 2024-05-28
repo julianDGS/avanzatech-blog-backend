@@ -347,13 +347,8 @@ URL:
 
 Path variable: id of post to be deleted 
 
-Expected response body example: `HTTP 204`
+No response body: `HTTP 204`
 
-```jsx
-{
-    "message": "Post deleted."
-}
-```
 
 ## Create Like `POST`
 
@@ -454,13 +449,8 @@ URL:
 
 Path variable: id of like to be deleted
 
-Expected response body example: `HTTP 204`
+No response body: `HTTP 204`
 
-```jsx
-{
-    "message": "Like from some user deleted."
-}
-```
 
 ## Create Comment `POST`
 
@@ -565,10 +555,4 @@ URL:
 
 Path variable: id of comment to be deleted
 
-Expected response body example: `HTTP 20`
-
-```jsx
-{
-    "message": "Comment from some user deleted."
-}
-```
+No response body: `HTTP 204`

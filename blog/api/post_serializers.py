@@ -3,7 +3,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.models import AnonymousUser
 from rest_framework import serializers
 
-from ..models import BlogPost, Like
+from ..models import BlogPost
 from permission.models import PostPermission, Category, Permission, CategoryName
 
 class BlogPostSerializer(serializers.ModelSerializer):
@@ -24,7 +24,6 @@ class BlogPostSerializer(serializers.ModelSerializer):
             'comments': instance.comments.count()
         }
         user = self.context.get('request').user
-        print(user)
         if not isinstance(user, AnonymousUser):
             like_count = instance.likes.filter(id=user.id).count()
             response['post_liked'] = True if like_count > 0 else False;

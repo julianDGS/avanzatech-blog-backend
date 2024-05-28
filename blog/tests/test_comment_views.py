@@ -205,7 +205,7 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
                 PostPermission.objects.filter(post=post_data, category=data['category']).update(permission=self.none)
                 response = self.client.get(self.comment_url)
                 self.assertEqual(response.status_code, HTTP_200_OK)
-                self.assertEqual(len(response.data['results']), data['len'])
+                self.assertEqual(response.data['total_count'], data['len'])
 
 
     def test_view_shows_correct_comments_with_user_as_team_member(self):
@@ -230,7 +230,7 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
                 PostPermission.objects.filter(post=post_data, category=data['category']).update(permission=self.none)
                 response = self.client.get(self.comment_url, headers={'X-CSRFToken': response_login.cookies['csrftoken'].value})
                 self.assertEqual(response.status_code, HTTP_200_OK)
-                self.assertEqual(len(response.data['results']), data['len'])
+                self.assertEqual(response.data['total_count'], data['len'])
 
 
     def test_view_shows_correct_comments_with_user_as_authenticated(self):
@@ -255,7 +255,7 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
                 PostPermission.objects.filter(post=post_data, category=data['category']).update(permission=self.none)
                 response = self.client.get(self.comment_url, headers={'X-CSRFToken': response_login.cookies['csrftoken'].value})
                 self.assertEqual(response.status_code, HTTP_200_OK)
-                self.assertEqual(len(response.data['results']), data['len'])
+                self.assertEqual(response.data['total_count'], data['len'])
 
 
     def test_view_filter_by_post_and_user(self):
@@ -283,13 +283,13 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
         admin = self.user
         admin.is_admin = True
         admin.save()
-        CommentFactory.create_batch(40)
+        CommentFactory.create_batch(20)
         response = self.client.get(self.comment_url)
         self.assertEqual(response.status_code, HTTP_200_OK)
         self.assertEqual(response.data['total_pages'], 4)
-        self.assertEqual(response.data['total_count'], 40)
+        self.assertEqual(response.data['total_count'], 20)
         self.assertEqual(response.data['current_page'], 1)
         next_page_param = (response.data['next']).find('?')
         self.assertEqual(response.data['next'][next_page_param:], '?page=2')
         self.assertEqual(response.data['previous'], None)
-        self.assertEqual(len(response.data['results']), 10)
+        self.assertEqual(len(response.data['results']), 5)
