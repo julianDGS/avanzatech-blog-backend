@@ -9,6 +9,9 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:4200"
 ]
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:4200',
+]
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases

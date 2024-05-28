@@ -11,6 +11,7 @@ class CommentSerializer(serializers.ModelSerializer):
         return {
             'id': instance.id,
             'comment': instance.comment,
+            'created_at': instance.created_at,
             'post': {'id': instance.post.id, 'title': instance.post.title},
-            'user': {'id': instance.user.id, 'nickname': instance.user.nickname, 'email': instance.user.email}
+            'user': {'id': instance.user.id, 'nickname': instance.user.nickname, 'email': instance.user.email},
         }

@@ -1,5 +1,6 @@
 from django.db import transaction
 from django.core.exceptions import ObjectDoesNotExist 
+from django.contrib.auth.models import AnonymousUser
 from rest_framework import serializers
 
 from ..models import BlogPost, Like
@@ -11,7 +12,7 @@ class BlogPostSerializer(serializers.ModelSerializer):
         fields = ('id', 'title', 'content', 'author')
 
     def to_representation(self, instance: BlogPost):
-        return {
+        response = {
             'id': instance.id,
             'title': instance.title,
             'content': instance.content,
@@ -22,6 +23,12 @@ class BlogPostSerializer(serializers.ModelSerializer):
             'likes': instance.likes.count(),
             'comments': instance.comments.count()
         }
+        user = self.context.get('request').user
+        print(user)
+        if not isinstance(user, AnonymousUser):
+            like_count = instance.likes.filter(id=user.id).count()
+            response['post_liked'] = True if like_count > 0 else False;
+        return response
         
 class PostPermissionSerializer(serializers.Serializer):
     category_id = serializers.IntegerField()
