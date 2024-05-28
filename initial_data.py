@@ -17,10 +17,10 @@ def create_permissions():
 def create_team():
     team = Team.objects.first();
     if not team:
-        Team.objects.create(id=1, name='rookie')
+        Team.objects.create(id=1, name='Rookie')
     elif team.id != 1:
         team.delete()
-        Team.objects.create(id=1, name='rookie')
+        Team.objects.create(id=1, name='Rookie')
 
 def init_data():
     create_team()

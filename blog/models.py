@@ -9,7 +9,7 @@ class BaseAbstractModel(models.Model):
         abstract = True
 
     id = models.AutoField(primary_key=True)
-    created_at = models.DateField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
 class BlogPost(BaseAbstractModel):
