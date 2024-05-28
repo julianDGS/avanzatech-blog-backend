@@ -40,7 +40,7 @@ class LikeViewSet(viewsets.GenericViewSet, ListQuerysetMixin):
             if like.user.id == request.user.id:
                 self.check_object_permissions(request, like.post)
                 like.delete()
-                return Response({'message': f'Like from {request.user.nickname} deleted.'}, status=HTTP_204_NO_CONTENT)
+                return Response(status=HTTP_204_NO_CONTENT)
             return Response({'error': 'You have not liked this post.'}, status=HTTP_400_BAD_REQUEST)
         return Response({'error': 'Like not found.'}, status=HTTP_404_NOT_FOUND)
     

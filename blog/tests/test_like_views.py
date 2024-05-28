@@ -248,16 +248,16 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
         admin = self.user
         admin.is_admin = True
         admin.save()
-        LikeFactory.create_batch(40)
+        LikeFactory.create_batch(30)
         response = self.client.get(self.like_url)
         self.assertEqual(response.status_code, HTTP_200_OK)
         self.assertEqual(response.data['total_pages'], 2)
-        self.assertEqual(response.data['total_count'], 40)
+        self.assertEqual(response.data['total_count'], 30)
         self.assertEqual(response.data['current_page'], 1)
         next_page_param = (response.data['next']).find('?')
         self.assertEqual(response.data['next'][next_page_param:], '?page=2')
         self.assertEqual(response.data['previous'], None)
-        self.assertEqual(len(response.data['results']), 20)
+        self.assertEqual(len(response.data['results']), 15)
         
 
     
