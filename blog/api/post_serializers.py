@@ -18,7 +18,15 @@ class BlogPostSerializer(serializers.ModelSerializer):
             'content': instance.content,
             'excerpt': instance.excerpt,
             'createdAt': instance.created_at,
-            'author': {'id': instance.author.id, 'nickname': instance.author.nickname, 'email': instance.author.email, 'team': instance.author.team.name},
+            'author': {
+                'id': instance.author.id, 
+                'nickname': instance.author.nickname, 
+                'email': instance.author.email, 
+                'team': {
+                  'id': instance.author.team.id,
+                  'name': instance.author.team.name  
+                } 
+            },
             'permissions': {cat_perm.category.name: cat_perm.permission.name for cat_perm in instance.reverse_post.all()},
             'likes': instance.likes.count(),
             'comments': instance.comments.count()
@@ -43,16 +51,9 @@ class BlogPostCreateSerializer(serializers.ModelSerializer):
 
     def validate_permissions(self, permissions: list):
         allowed_categories = [choice for choice, _ in CategoryName.choices]
-        # allowed_category_ids = [category.id for category in Category.objects.all()]
-        # allowed_perm_ids = [permission.id for permission in Permission.objects.all()]
         set_categories = set([permission['category_id'] for permission in permissions])
         if len(set_categories) != len(allowed_categories):
             raise serializers.ValidationError("Missing permission for some category.")
-        # for permission_dict in permissions:
-        #     if permission_dict['category_id'] not in allowed_category_ids:
-        #         raise serializers.ValidationError("There is an illegal category.")
-        #     if permission_dict['permission_id'] not in allowed_perm_ids:
-        #         raise serializers.ValidationError("There is an illegal permission access.")
         return permissions
 
     @transaction.atomic

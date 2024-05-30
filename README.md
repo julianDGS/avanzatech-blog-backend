@@ -20,6 +20,8 @@ This is a REST API application, developed with Django Rest Framework, to emulate
 15. [Create Comment](#Create-Comment-POST)
 16. [List Comments](#List-Comments-GET)
 17. [Delete Comment](#Delete-Comment-DELETE)
+18. [List Permissions](#List-Permissions-GET)
+19. [List Categories](#List-Categories-GET)
 
 # Setup
 
@@ -258,7 +260,11 @@ Expected response body example: `HTTP 200`
     "author": {
         "id": 1,
         "nickname": "some",
-        "email": "user"
+        "email": "user",
+        "team": {
+            "id": 1,
+            "name": "Rookie"
+        }
     },
     "permissions": {
         "public": "none",
@@ -266,8 +272,9 @@ Expected response body example: `HTTP 200`
         "team": "read",
         "author": "edit"
     },
-    "likes": 0
-    "comments": 0
+    "likes": 0,
+    "comments": 0,
+    "post_liked": true
 }
 ```
 
@@ -293,46 +300,56 @@ Expected response body example: `HTTP 200`
     "total_pages": 2,
     "results": [
         {
-	    "id": 1,
-	    "title": "Post Title Updated.",
-	    "content": "Some edit content for some post created.",
-	    "excerpt": "Some edit content for some post created.",
-	    "author": {
-		"id": 1,
-		"nickname": "some",
-		"email": "user"
+            "id": 1,
+            "title": "Post Title Updated.",
+            "content": "Some edit content for some post created.",
+            "excerpt": "Some edit content for some post created.",
+            "author": {
+                "id": 1,
+                "nickname": "some",
+                "email": "user",
+                "team": {
+                    "id": 1,
+                    "name": "Rookie"
+                }
+            },
+            "permissions": {
+                "public": "none",
+                "auth": "edit",
+                "team": "read",
+                "author": "edit"
+            },
+            "likes": 0,
+            "comments": 0,
+            "post_liked": true
 	    },
-	    "permissions": {
-		"public": "none",
-		"auth": "edit",
-		"team": "read",
-		"author": "edit"
-	    },
-	    "likes": 0
-	    "comments": 0
-	},
 				
         "..."
         
         ,{
-	    "id": 10,
-	    "title": "Post Title 10.",
-	    "content": "Some content for some post created 10.",
-	    "excerpt": "Some edit content for some post created 10",
-	    "author": {
-		"id": 1,
-		"nickname": "some",
-		"email": "user"
-	    },
-	    "permissions": {
-		"public": "none",
-		"auth": "edit",
-		"team": "read",
-		"author": "edit"
-	    },
-	    "likes": 0
-	    "comments": 0
-	}
+            "id": 10,
+            "title": "Post Title 10.",
+            "content": "Some content for some post created 10.",
+            "excerpt": "Some edit content for some post created 10",
+            "author": {
+                "id": 1,
+                "nickname": "some",
+                "email": "user",
+                "team": {
+                    "id": 1,
+                    "name": "Rookie"
+                }
+            },
+            "permissions": {
+                "public": "none",
+                "auth": "edit",
+                "team": "read",
+                "author": "edit"
+            },
+            "likes": 0,
+            "comments": 0,
+            "post_liked": true
+        }
     ]
 }
 ```
@@ -556,3 +573,62 @@ URL:
 Path variable: id of comment to be deleted
 
 No response body: `HTTP 204`
+
+
+## List Permissions `GET`
+
+List all existing permissions. `Authentication Required`
+
+URL: 
+
+`http://localhost:8000/permission/` 
+
+Expected response body example: `HTTP 200`
+
+```jsx
+[
+    {
+        "id": 1,
+        "name": "read"
+    },
+    {
+        "id": 2,
+        "name": "edit"
+    },
+    {
+        "id": 3,
+        "name": "none"
+    }
+]
+```
+
+## List Categories `GET`
+
+List all existing permission categories. `Authentication Required`
+
+URL: 
+
+`http://localhost:8000/permission/category/` 
+
+Expected response body example: `HTTP 200`
+
+```jsx
+[
+    {
+        "id": 1,
+        "name": "public"
+    },
+    {
+        "id": 2,
+        "name": "auth"
+    },
+    {
+        "id": 3,
+        "name": "team"
+    },
+    {
+        "id": 4,
+        "name": "author"
+    }
+]
+```
