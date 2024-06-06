@@ -16,6 +16,7 @@ class BlogPost(BaseAbstractModel):
     
     title = models.CharField("title", max_length=250, default=None)
     content = models.TextField("content", default=None)
+    content_html = models.TextField("Html Content", default=None)
     author = models.ForeignKey(User, verbose_name="Author", on_delete=models.DO_NOTHING)
     likes = models.ManyToManyField(User, verbose_name=("Likes"), related_name='liked_posts', through='Like')
     comments = models.ManyToManyField(User, verbose_name=("Comments"), related_name='commented_posts', through='Comment')

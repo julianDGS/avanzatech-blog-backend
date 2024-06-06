@@ -86,7 +86,7 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
         like = LikeFactory.create(post=self.post_author, user=self.user)
         self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 1)
         PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.read)
-        response = self.client.delete(f'{self.like_url}{like.id}/')
+        response = self.client.delete(f'{self.like_url}{self.post_author.id}/')
         self.assertEqual(response.status_code, HTTP_204_NO_CONTENT)
         self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 0)
 
@@ -95,7 +95,7 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
         like = LikeFactory.create(post=self.post_author, user=self.user)
         self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 1)
         PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.none)
-        response = self.client.delete(f'{self.like_url}{like.id}/')
+        response = self.client.delete(f'{self.like_url}{self.post_author.id}/')
         self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
         self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 1)
 
@@ -104,7 +104,7 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
         like = LikeFactory.create(post=self.post_team, user=self.user)
         self.assertEqual(len(Like.objects.filter(post_id=self.post_team.id)), 1)
         PostWithPermissionFactory.create_batch(4, post=self.post_team, permission=self.none)
-        response = self.client.delete(f'{self.like_url}{like.id}/')
+        response = self.client.delete(f'{self.like_url}{self.post_team.id}/')
         self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
         self.assertEqual(len(Like.objects.filter(post_id=self.post_team.id)), 1)
 
@@ -113,7 +113,7 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
         like = LikeFactory.create(post=self.post_authenticate, user=self.user)
         self.assertEqual(len(Like.objects.filter(post_id=self.post_authenticate.id)), 1)
         PostWithPermissionFactory.create_batch(4, post=self.post_authenticate, permission=self.none)
-        response = self.client.delete(f'{self.like_url}{like.id}/')
+        response = self.client.delete(f'{self.like_url}{self.post_authenticate.id}/')
         self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
         self.assertEqual(len(Like.objects.filter(post_id=self.post_authenticate.id)), 1)
 
@@ -131,7 +131,7 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
         like = LikeFactory.create(post=self.post_author, user=self.post_team.author)
         self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 1)
         PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.edit)
-        response = self.client.delete(f'{self.like_url}{like.id}/')
+        response = self.client.delete(f'{self.like_url}{self.post_author.id}/')
         self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['error'], 'You have not liked this post.')
         self.assertEqual(len(Like.objects.filter(post_id=self.post_author.id)), 1)

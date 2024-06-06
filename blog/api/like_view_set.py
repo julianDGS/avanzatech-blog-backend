@@ -35,9 +35,11 @@ class LikeViewSet(viewsets.GenericViewSet, ListQuerysetMixin):
     
 
     def destroy(self, request, pk=None):
-        like = self.get_serializer().Meta.model.objects.filter(pk=pk).first()        
-        if like:
-            if like.user.id == request.user.id:
+        post = BlogPost.objects.filter(pk=pk).first()
+        user_id = request.user.id
+        if post:
+            like = self.get_serializer().Meta.model.objects.filter(post_id=post.id, user_id=user_id).first()    
+            if like:
                 self.check_object_permissions(request, like.post)
                 like.delete()
                 return Response(status=HTTP_204_NO_CONTENT)

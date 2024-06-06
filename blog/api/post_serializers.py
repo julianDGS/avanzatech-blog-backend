@@ -16,6 +16,7 @@ class BlogPostSerializer(serializers.ModelSerializer):
             'id': instance.id,
             'title': instance.title,
             'content': instance.content,
+            'content_html': instance.content_html,
             'excerpt': instance.excerpt,
             'createdAt': instance.created_at,
             'author': {
@@ -27,7 +28,9 @@ class BlogPostSerializer(serializers.ModelSerializer):
                   'name': instance.author.team.name  
                 } 
             },
-            'permissions': {cat_perm.category.name: cat_perm.permission.name for cat_perm in instance.reverse_post.all()},
+            'permissions': {
+                cat_perm.category.name: {'id':cat_perm.permission.id, 'name':cat_perm.permission.name} for cat_perm in instance.reverse_post.all()
+            },
             'likes': instance.likes.count(),
             'comments': instance.comments.count()
         }
@@ -46,7 +49,7 @@ class BlogPostCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = BlogPost
-        fields = ('id', 'title', 'content', 'author', 'permissions')
+        fields = ('id', 'title', 'content', 'author', 'permissions', 'content_html')
 
 
     def validate_permissions(self, permissions: list):
@@ -68,6 +71,7 @@ class BlogPostCreateSerializer(serializers.ModelSerializer):
         permissions_data = validated_data.pop('permissions')
         instance.title = validated_data.get('title')
         instance.content = validated_data.get('content')
+        instance.content = validated_data.get('content_html')
         instance.save()
         self._save_permissions(permissions_data, instance)
         return instance

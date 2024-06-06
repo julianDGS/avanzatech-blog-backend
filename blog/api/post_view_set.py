@@ -3,8 +3,10 @@ from rest_framework.response import Response
 from rest_framework.status import *
 from rest_framework.parsers import JSONParser
 
+from django_filters.rest_framework import DjangoFilterBackend
 
 from blog.models import BlogPost
+from blog.filters import PostFilter
 
 from .post_serializers import BlogPostCreateSerializer, BlogPostSerializer
 from mixins.pagination_mixin import BlogPostPagination
@@ -17,6 +19,8 @@ class BlogPostViewSet(viewsets.GenericViewSet, ListQuerysetMixin):
     parser_classes = (JSONParser,)
     permission_classes = [AuthenticateAndPostEdit]
     pagination_class = BlogPostPagination
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = PostFilter
 
 
     def get_queryset(self, pk=None):
