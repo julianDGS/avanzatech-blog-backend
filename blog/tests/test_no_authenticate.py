@@ -25,6 +25,7 @@ class BlogPostWithNoAuthTest(APITestCase):
         self.data = {
             'title': 'Leave sense plan.', 
             'content': 'Effect somebody drug figure quality success. There government work commercial.',
+            'content_html': '<p>Effect somebody drug figure quality success. There government work commercial.</p>',
             'author': self.user.id,
             'permissions': [
                 {"category_id": self.public.id, "permission_id": self.none.id},

@@ -15,7 +15,7 @@ class BlogModelTest(TestCase):
     def test_create_new_blog_post(self):        
         blog_post = BlogPostFactory()
         created_date = datetime.now().date()
-        excerpt = blog_post.content[:200]
+        excerpt = blog_post.content_html[:200]
         
         posts_from_db = BlogPost.objects.all()
         self.assertEqual(len(posts_from_db), 1)

@@ -71,7 +71,7 @@ class BlogPostCreateSerializer(serializers.ModelSerializer):
         permissions_data = validated_data.pop('permissions')
         instance.title = validated_data.get('title')
         instance.content = validated_data.get('content')
-        instance.content = validated_data.get('content_html')
+        instance.content_html = validated_data.get('content_html')
         instance.save()
         self._save_permissions(permissions_data, instance)
         return instance

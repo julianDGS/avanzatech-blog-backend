@@ -9,6 +9,7 @@ class BlogPostFactory(factory.django.DjangoModelFactory):
 
     title = factory.Faker('sentence', nb_words=4)
     content = factory.Faker('paragraph', nb_sentences=10)
+    content_html = factory.Faker('paragraph', nb_sentences=10)
     author = factory.SubFactory(UserFactory)
 
 class LikeFactory(factory.django.DjangoModelFactory):

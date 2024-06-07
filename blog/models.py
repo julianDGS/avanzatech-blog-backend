@@ -14,16 +14,16 @@ class BaseAbstractModel(models.Model):
 
 class BlogPost(BaseAbstractModel):
     
-    title = models.CharField("title", max_length=250, default=None)
-    content = models.TextField("content", default=None)
-    content_html = models.TextField("Html Content", default=None)
+    title = models.CharField("title", max_length=250)
+    content = models.TextField("content")
+    content_html = models.TextField("Html Content")
     author = models.ForeignKey(User, verbose_name="Author", on_delete=models.DO_NOTHING)
     likes = models.ManyToManyField(User, verbose_name=("Likes"), related_name='liked_posts', through='Like')
     comments = models.ManyToManyField(User, verbose_name=("Comments"), related_name='commented_posts', through='Comment')
 
     @property
     def excerpt(self):
-        return self.content[:200]
+        return self.content_html[:200]
 
     class Meta:
         db_table = "blog_posts"
@@ -49,7 +49,7 @@ class Like(BaseAbstractModel):
 class Comment(BaseAbstractModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     post = models.ForeignKey(BlogPost, on_delete=models.CASCADE)
-    comment = models.TextField(("comment"), default=None)
+    comment = models.TextField(("comment"))
 
     class Meta:
         db_table = 'blog_post_comments'

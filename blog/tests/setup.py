@@ -15,7 +15,6 @@ class AuthenticateSetUp(APITestCase):
             self.comment_url = '/comment/'
 
             self.user = UserFactory(email="user@mail.com", set_user_password="223344")
-            # import pdb; pdb.set_trace()
             
             self.public = Category.objects.create(name=CategoryName.PUBLIC)
             self.auth = Category.objects.create(name=CategoryName.AUTHENTICATE)
@@ -28,6 +27,7 @@ class AuthenticateSetUp(APITestCase):
             self.data = {
                 'title': 'Leave sense plan.', 
                 'content': 'Effect somebody drug figure quality success. There government work commercial. Good various prevent suddenly. Concern create relationship. Want moment accept kitchen gun. Day popular generation bring stage.', 
+                'content_html': '<p>Effect somebody drug figure quality success. There government work commercial. Good various prevent suddenly. Concern create relationship. Want moment accept kitchen gun. Day popular generation bring stage.</p>', 
                 'permissions': [
                     {"category_id": self.public.id, "permission_id": self.none.id},
                     {"category_id": self.auth.id, "permission_id": self.read.id},

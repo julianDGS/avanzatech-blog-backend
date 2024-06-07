@@ -168,8 +168,9 @@ class BlogPostWithAuthenticationTest(AuthenticateSetUp):
         PostWithPermissionFactory.create_batch(4, post=self.post_author, permission=self.edit)
         
         test_data = [
-            {**self.data, 'title': None},
-            {**self.data, 'content': None},
+            {'permissions': self.data['permissions'], 'title': self.data['title']},
+            {'permissions': self.data['permissions'], 'content': self.data['content']},
+            {**self.data, 'title': ''},
             {**self.data, 'permissions': [
                 {'category_id': self.auth.id, 'permission_id': self.read.id}, 
                 {'category_id': self.author.id, 'permission_id': self.read.id}, 
