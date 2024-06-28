@@ -42,10 +42,12 @@ Clone the repository [`https://github.com/julianDGS/avanzatech_blog`](https://gi
     ```
     
 3. In the root of the project (where the file docker-compose.yaml is) using a command shell execute:
+
+    - `sudo docker-compose build`
     
-    `sudo docker-compose up --build`   
+    - `sudo docker-compose up`   
     
-    This command will install all required dependencies and services, and run the server in http://localhost:8000/
+    First command will install all required dependencies and services, and second one run the server in http://localhost:8000/
     
 
 ## Manual Setup
